@@ -9,6 +9,7 @@ import numpy as np
 #from pyrevolve import Revolver
 import h5py
 from contexttimer import Timer
+from util import to_hdf5
 
 
 def from_hdf5(filename, **kwargs):

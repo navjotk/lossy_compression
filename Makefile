@@ -1,4 +1,4 @@
-all: precision.csv tolerance.csv uncompressed.png decompressed-t-0.png errors.txt
+all: precision.csv tolerance.csv uncompressed.png decompressed-t-0.png errors.txt decompressed-t-8.png decompressed-t-15.png
 
 errors.txt: uncompressed.h5 decompressed-t-0.h5 difference.py
 	python difference.py uncompressed.h5 decompressed-t-0.h5 > errors.txt

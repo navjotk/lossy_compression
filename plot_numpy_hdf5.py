@@ -11,6 +11,6 @@ output_file = sys.argv[2]
 with h5py.File(input_file) as ifile:
     data = ifile['data'][()]
 
-plt.imshow(data[143], cmap="seismic")
+plt.imshow(data[143], vmin=-vmax, cmap="seismic")
 
 plt.savefig(output_file)
