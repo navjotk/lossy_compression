@@ -1,6 +1,8 @@
 from ctypes import cdll
 import numpy as np
 import ctypes
+import h5py
+from contexttimer import Timer
 
 class BitStream(ctypes.Structure):
     pass
@@ -41,7 +43,6 @@ def raw_pointer(numpy_array):
     return ctypes.c_void_p(numpy_array.ctypes.data)
 
 def compress(indata, tolerance=None, precision=None):
-    print("Shape: %s" % str(indata.shape))
     assert(tolerance or precision)
     assert(not(tolerance is not None and precision is not None))
     zfp_types = {np.dtype('float32'): 3, np.dtype('float64'): 4}
@@ -51,8 +52,6 @@ def compress(indata, tolerance=None, precision=None):
     shape = indata.shape
     
     field = zfp_fields[len(shape)](raw_pointer(indata), data_type, *shape)
-    from IPython import embed
-    embed()
     stream = libzfp.zfp_stream_open(None)
     stream = ctypes.cast(stream, ctypes.POINTER(ZfpStream))
     field = ctypes.cast(field, ctypes.POINTER(ZfpField))
@@ -73,11 +72,10 @@ def compress(indata, tolerance=None, precision=None):
     return buff[:zfpsize]
 
 def decompress(compressed, shape, dtype, tolerance=None, precision=None):
-    print("Shape: %s" % str(shape))
     assert(tolerance or precision)
     assert(not(tolerance is not None and precision is not None))
     outdata = np.zeros(shape, dtype=dtype)
-    zfp_types = {np.float32: 3, np.dtype('float64'): 4}
+    zfp_types = {np.dtype('float32'): 3, np.dtype('float64'): 4}
     zfp_fields = {1: libzfp.zfp_field_1d, 2: libzfp.zfp_field_2d, 3: libzfp.zfp_field_3d}
     data_type = zfp_types[dtype]
     field = zfp_fields[len(shape)](raw_pointer(outdata), data_type, *shape)
@@ -101,13 +99,14 @@ def decompress(compressed, shape, dtype, tolerance=None, precision=None):
     return outdata
 
 
-#a = np.linspace(0, 100, num=10000).reshape((100, 100))
-#tolerance = 0.00001
-#status, compressed, size = compress(a, tolerance)
+#a = np.linspace(0, 100, num=1000000).reshape((100, 100, 100))
 
-#recovered = decompress(compressed, a.shape, a.dtype, tolerance)
+
+
+#tolerance = 0.0000001
+#compressed = compress(a, tolerance=tolerance)
+
+#recovered = decompress(compressed, a.shape, a.dtype, tolerance=tolerance)
 #print(len(a.tostring()))
-#print(size)
-#print(len(compressed.value))
+#print(len(compressed))
 #print(np.linalg.norm(recovered-a))
-#print(recovered)
