@@ -42,4 +42,4 @@ if __name__ == "__main__":
 
     run(original=args.original, lossy=args.lossy, nbpml=args.nbpml, 
         space_order=args.space_order, kernel=args.kernel,
-        autotune=args.autotune, dse=args.dse, dle=args.dle)
+        dse=args.dse, dle=args.dle)

@@ -95,4 +95,4 @@ if __name__ == "__main__":
 
     run(nbpml=args.nbpml, 
         space_order=args.space_order, kernel=args.kernel,
-        autotune=args.autotune, dse=args.dse, dle=args.dle, filename='overthrust_3D_initial_model.h5')
+        dse=args.dse, dle=args.dle, filename='overthrust_3D_initial_model.h5')
