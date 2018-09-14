@@ -6,7 +6,7 @@ images: uncompressed.png decompressed-t-0.png decompressed-t-8.png decompressed-
 
 csvs: precision.csv tolerance.csv
 
-errors-%.txt: % uncompressed.h5 difference.py
+error-%.txt: % uncompressed.h5 difference.py
 	python -u difference.py uncompressed.h5 $< | tee $@
 
 %.png: %.h5
