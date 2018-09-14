@@ -10,7 +10,7 @@ filename = sys.argv[1]
 
 f = h5py.File(filename, 'r')
 uncompressed = f['data'][()].astype(np.dtype('float32'))
-print("\"Size of compressed field\", \"Compression Factor\", \"Compression time\", \"Decompression time\", \"Tolerance\", \"Error norm\", \"Maximum error\"")
+print("\"Size of compressed field\", \"Compression Factor\", \"Compression time\", \"Decompression time\", \"Precision\", \"Error norm\", \"Maximum error\"")
 for p_i in range(6, 20):
     precision = p_i
     with Timer(factor=1000) as t:

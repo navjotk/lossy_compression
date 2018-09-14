@@ -1,12 +1,46 @@
-all: errors images csvs
-
-errors: error-decompressed-t-0.h5.csv error-decompressed-t-8.h5.csv error-decompressed-t-15.h5.csv error-decompressed-p-6.h5.csv error-decompressed-p-10.h5.csv error-decompressed-p-19.h5.csv
+all: errors images csvs plots
 
 images: uncompressed.png decompressed-t-0.png decompressed-t-8.png decompressed-t-15.png decompressed-p-6.png decompressed-p-10.png decompressed-p-19.png
 
 csvs: precision.csv tolerance.csv
 
-error-%.csv: % uncompressed.h5 difference.py
+plots: plots1 plotsn plotsm
+
+plots1: plot-tolerance-cf.png plot-tolerance-err-norm.png plot-tolerance-err-max.png plot-precision-cf.png plot-precision-err-norm.png plot-precision-err-max.png
+
+plotsn: plotn-error-decompressed-t-0.csv plotn-error-decompressed-t-8.csv plotn-error-decompressed-t-15.csv plotn-error-decompressed-p-6.csv plotn-error-decompressed-p-10.csv plotn-error-decompressed-p-19.csv
+
+plotsm: plotm-error-decompressed-t-0.csv plotm-error-decompressed-t-8.csv plotm-error-decompressed-t-15.csv plotm-error-decompressed-p-6.csv plotm-error-decompressed-p-10.csv plotm-error-decompressed-p-19.csv
+
+errors: error-decompressed-t-0.csv error-decompressed-t-8.csv error-decompressed-t-15.csv error-decompressed-p-6.csv error-decompressed-p-10.csv error-decompressed-p-19.csv
+
+plotn-%.png: %.csv plotter.py
+	python plotter.py $< 0 1 "Progression of error norm with simulation time" $@
+
+plotm-%.png: %.csv plotter.py
+	python plotter.py $< 0 2 "Progression of error norm with simulation time" $@
+
+plot-tolerance-cf.png: tolerance.csv plotter.py 
+	python plotter.py tolerance.csv 4 1 "Compression factor for varying tolerance" $@
+
+plot-tolerance-err-norm.png: tolerance.csv plotter.py 
+	python plotter.py tolerance.csv 4 5 "Error norm for varying tolerance" $@
+
+plot-tolerance-err-max.png: tolerance.csv plotter.py 
+	python plotter.py tolerance.csv 4 6 "Maximum error for varying tolerance" $@
+
+plot-precision-cf.png: precision.csv plotter.py 
+	python plotter.py precision.csv 4 1 "Compression factor for varying precision" $@
+
+plot-precision-err-norm.png: precision.csv plotter.py 
+	python plotter.py precision.csv 4 5 "Error norm for varying precision" $@
+
+plot-precision-err-max.png: precision.csv plotter.py 
+	python plotter.py precision.csv 4 6 "Maximum error for varying precision" $@
+
+plot-prog-norm-p.png: 
+
+error-%.csv: %.h5 uncompressed.h5 difference.py
 	python -u difference.py uncompressed.h5 $< | tee $@
 
 %.png: %.h5
