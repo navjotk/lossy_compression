@@ -1,8 +1,11 @@
 from argparse import ArgumentParser
 from simple import overthrust_setup
 import h5py
+from devito import TimeFunction
+import numpy as np
 
-def run(original, lossy, space_order=4, kernel='OT2', nbpml=40, **kwargs):
+
+def run(original, lossy, filename='', space_order=4, kernel='OT2', nbpml=40, **kwargs):
 
     solver = overthrust_setup(filename=filename, nbpml=nbpml, space_order=space_order, kernel=kernel, **kwargs)
 
@@ -10,13 +13,19 @@ def run(original, lossy, space_order=4, kernel='OT2', nbpml=40, **kwargs):
         correct_u = original_file['data'][()]
     with h5py.File(lossy) as lossy_file:
         lossy_u = lossy_file['data'][()]
-
+    u = TimeFunction(name="u", grid=solver.model.grid, time_order=2, space_order=solver.space_order)
     errors = []
     for steps in range(1, 1000, 10):
-        rec, u_correct_p, summary = solver.forward(save=False, u=correct_u, time=steps)
-        rec, u_lossy_p, summary = solver.forward(save=False, u=lossy_u, time=steps)
-        error = u_correct_p.data - u_lossy_p.data
-        errors.append((steps, np.linalg.norm(error), np.max(error)))
+        u.data[:] = correct_u[:]
+        rec, u_correct_p, summary = solver.forward(save=False, u=u, time=steps)
+        u_correct_p = u_correct_p.data.copy()
+        u.data[:] = lossy_u[:]
+        rec, u_lossy_p, summary = solver.forward(save=False, u=u, time=steps)
+        u_lossy_p = u_lossy_p.data.copy()
+        error = u_correct_p - u_lossy_p
+        it_errors = (steps, np.linalg.norm(error), np.max(error.data))
+        print(it_errors)
+        errors.append(it_errors)
     print(errors)
 
 
@@ -43,4 +52,4 @@ if __name__ == "__main__":
 
     run(original=args.original, lossy=args.lossy, nbpml=args.nbpml, 
         space_order=args.space_order, kernel=args.kernel,
-        dse=args.dse, dle=args.dle)
+        dse=args.dse, dle=args.dle, filename='overthrust_3D_initial_model.h5')

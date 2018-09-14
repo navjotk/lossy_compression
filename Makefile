@@ -1,7 +1,13 @@
-all: precision.csv tolerance.csv uncompressed.png decompressed-t-0.png errors.txt decompressed-t-8.png decompressed-t-15.png
+all: errors images csvs
 
-errors.txt: uncompressed.h5 decompressed-t-0.h5 difference.py
-	python difference.py uncompressed.h5 decompressed-t-0.h5 > errors.txt
+errors: error-decompressed-t-0.h5.txt error-decompressed-t-8.h5.txt error-decompressed-t-15.h5.txt error-decompressed-p-6.h5.txt error-decompressed-p-10.h5.txt error-decompressed-p-19.h5.txt
+
+images: uncompressed.png decompressed-t-0.png decompressed-t-8.png decompressed-t-15.png decompressed-p-6.png decompressed-p-10.png decompressed-p-19.png
+
+csvs: precision.csv tolerance.csv
+
+errors-%.txt: % uncompressed.h5 difference.py
+	python -u difference.py uncompressed.h5 $< | tee $@
 
 %.png: %.h5
 	python plot_numpy_hdf5.py $< $@
