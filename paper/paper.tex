@@ -1,0 +1,234 @@
+\documentclass[conference]{IEEEtran}
+%\IEEEoverridecommandlockouts
+% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+\begin{document}
+
+\title{Towards Accelerating checkpointed adjoint computations in full waveform
+  inversion using lossy compression
+}
+
+\author{\IEEEauthorblockN{1\textsuperscript{st} Given Name Surname}
+\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
+\textit{name of organization (of Aff.)}\\
+City, Country \\
+email address}
+\and
+\IEEEauthorblockN{2\textsuperscript{nd} Given Name Surname}
+\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
+\textit{name of organization (of Aff.)}\\
+City, Country \\
+email address}
+\and
+\IEEEauthorblockN{3\textsuperscript{rd} Given Name Surname}
+\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
+\textit{name of organization (of Aff.)}\\
+City, Country \\
+email address}
+\and
+\IEEEauthorblockN{4\textsuperscript{th} Given Name Surname}
+\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
+\textit{name of organization (of Aff.)}\\
+City, Country \\
+email address}
+\and
+\IEEEauthorblockN{5\textsuperscript{th} Given Name Surname}
+\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
+\textit{name of organization (of Aff.)}\\
+City, Country \\
+email address}
+\and
+\IEEEauthorblockN{6\textsuperscript{th} Given Name Surname}
+\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
+\textit{name of organization (of Aff.)}\\
+City, Country \\
+email address}
+}
+
+\maketitle
+
+\begin{abstract}
+Full-waveform inversion is an adjoint-based optimization problem in
+seismic imaging that processes terabytes of data, often beyond the
+memory capacity of most modern computer systems. A common technique to
+carry out the adjoint computation in an environment with
+less-than-optimal memory is checkpoint-recomputation. In this
+technique, a subset of the forward-computation states are stored in
+memory checkpoints and the others are recomputed from the stored
+states. The compression of checkpoints can increase the number of
+checkpoints available, in a given amount of memory, which, in turn,
+can reduce the recompute factor, reducing the time-to-solution of the
+adjoint computation. This compression, often comes at an additional
+computational cost, and an associated loss of precision that must be
+accounted for when choosing between compression schemes. In this
+paper, we study the effect of compression on checkpoint-recomputation
+methods in memory-constrained scenarios for a realistic FWI workload.
+\end{abstract}
+
+\begin{IEEEkeywords}
+component, formatting, style, styling, insert
+\end{IEEEkeywords}
+
+\section{Introduction}
+Introduce fulll waveform inversion as an adjoint based optimization
+problem
+
+introduce revolve based checkpointing - cite revolve, pyrevolve
+
+introduction on compression techniques
+
+relate compression to checkpoint compression
+
+\section{Related Work}
+
+Towards efficient backward-in-time adjoint computations using data
+compression techniques E.C. Cyr, J.N. Shadid, T. Wildey
+
+Lossy Data Compression with DCT Transforms F. Rubio Dalmau,
+M. Hanzich, J. de la Puente and N. Gutierrez 
+
+Full seismic waveform tomography for upper-mantle structure in the
+Australasian region using adjoint methods
+Andreas Fichtner,1 Brian L. N. Kennett,2 Heiner Igel1 and Hans-Peter
+Bunge1
+
+
+\section{Devito, pyRevolve, test case}
+short introduction to devito and how to setup a forward-backward
+propagator using it - some justification on why this is a realistic
+setup even though it might seem like a toy problem
+
+how does pyrevolve implement checkpointing
+
+test case setup.
+requirements: should be realistic, numerically stable (to get
+realistic compression), big domain,
+large number of timesteps
+Can we use a SEAM model here?
+\section{Compression algorithms}
+\subsection{Lossless}
+ZLib
+
+variations in compression ratios
+\subsection{Lossy}
+ZFP
+@inproceedings{lossless,
+    Acmid = {1126035},
+    Address = {Washington, DC, USA},
+    Author = {Ratanaworabhan, Paruj and Ke, Jian and Burtscher, Martin},
+    Booktitle = {Proceedings of the Data Compression Conference},
+    Date-Added = {2015-05-03 20:40:52 +0000},
+    Date-Modified = {2018-01-31 10:20:09 +0000},
+    Isbn = {0-7695-2545-8},
+    Numpages = {10},
+    Pages = {133--142},
+    Publisher = {IEEE Computer Society},
+    Series = {DCC '06},
+    Title = {Fast Lossless Compression of Scientific Floating-Point Data},
+    Year = {2006}}
+
+@conference{gpu-compression,
+    Author = {O'Neil, Molly A. and Burtscher, Martin},
+    Booktitle = {Proceedings of the Fourth Workshop on General Purpose Processing on Graphics Processing Units},
+    Date-Added = {2015-05-03 22:40:52 +0000},
+    Date-Modified = {2015-05-03 22:42:57 +0000},
+    Keywords = {GPGPU, floating-point data, lossless data compression, real-time compression},
+    Number = {10.1145/1964179.1964189},
+    Publisher = {ACM},
+    Title = {Floating-point Data Compression at 75 Gb/s on a {GPU}},
+    Year = {2011},
+}
+@inbook{Kaklamanis:2012aa,
+    Author = {Kaklamanis, Christos and Papatheodorou, Theodore and Spirakis, PaulG. and Iverson, Jeremy and Kamath, Chandrika and Karypis, George},
+    Booktitle = {Euro-Par 2012 Parallel Processing},
+    Chapter = {Fast and Effective Lossy Compression Algorithms for Scientific Datasets},
+    Da = {2012/01/01},
+    Date-Added = {2015-05-03 22:46:47 +0000},
+    Date-Modified = {2018-01-31 10:20:09 +0000},
+    Isbn = {978-3-642-32819-0},
+    La = {English},
+    Pages = {843-856},
+    Publisher = {Springer Berlin Heidelberg},
+    Se = {83},
+    Title = {Lecture Notes in Computer Science},
+    Title1 = {Fast and Effective Lossy Compression Algorithms for Scientific Datasets},
+    Ty = {CHAP},
+    Volume = {7484},
+    Year = {2012}}
+
+p-adaptive compression from Boehm et al. 
+\section{Results}
+\subsection{Error analysis}
+Discuss the error incurred due to lossy compression. This could be the
+angular deviation in the gradient from Boehm et al. as a factor of the
+precision parameter, for about 3 different compression schemes  What if a minor
+deviation is at a point where you're pointing directly at a
+constraint? or a corner point between two constraints? The line search
+may mistakenly terminate early. This should be used to derive a bound
+for compression ratio based on desired precision. 
+
+\subsection{Compression vs recomputation}
+
+- Time to solution for different compression ratios, for multiple
+compression algorithms. at least one lossless compression included
+here.
+
+at least 3 compression algorithms compared
+
+vary compression ratio within bound established in previous section
+
+\section{Conclusions and Future work}
+
+What are the problems?
+
+Disk checkpointing
+
+\section*{Acknowledgment}
+
+The preferred spelling of the word ``acknowledgment'' in America is without 
+an ``e'' after the ``g''. Avoid the stilted expression ``one of us (R. B. 
+G.) thanks $\ldots$''. Instead, try ``R. B. G. thanks$\ldots$''. Put sponsor 
+acknowledgments in the unnumbered footnote on the first page.
+
+\section*{References}
+
+Please number citations consecutively within brackets \cite{b1}. The 
+sentence punctuation follows the bracket \cite{b2}. Refer simply to the reference 
+number, as in \cite{b3}---do not use ``Ref. \cite{b3}'' or ``reference \cite{b3}'' except at 
+the beginning of a sentence: ``Reference \cite{b3} was the first $\ldots$''
+
+Number footnotes separately in superscripts. Place the actual footnote at 
+the bottom of the column in which it was cited. Do not put footnotes in the 
+abstract or reference list. Use letters for table footnotes.
+
+Unless there are six authors or more give all authors' names; do not use 
+``et al.''. Papers that have not been published, even if they have been 
+submitted for publication, should be cited as ``unpublished'' \cite{b4}. Papers 
+that have been accepted for publication should be cited as ``in press'' \cite{b5}. 
+Capitalize only the first word in a paper title, except for proper nouns and 
+element symbols.
+
+For papers published in translation journals, please give the English 
+citation first, followed by the original foreign-language citation \cite{b6}.
+
+\begin{thebibliography}{00}
+\bibitem{b1} G. Eason, B. Noble, and I. N. Sneddon, ``On certain integrals of Lipschitz-Hankel type involving products of Bessel functions,'' Phil. Trans. Roy. Soc. London, vol. A247, pp. 529--551, April 1955.
+\bibitem{b2} J. Clerk Maxwell, A Treatise on Electricity and Magnetism, 3rd ed., vol. 2. Oxford: Clarendon, 1892, pp.68--73.
+\bibitem{b3} I. S. Jacobs and C. P. Bean, ``Fine particles, thin films and exchange anisotropy,'' in Magnetism, vol. III, G. T. Rado and H. Suhl, Eds. New York: Academic, 1963, pp. 271--350.
+\bibitem{b4} K. Elissa, ``Title of paper if known,'' unpublished.
+\bibitem{b5} R. Nicole, ``Title of paper with only first word capitalized,'' J. Name Stand. Abbrev., in press.
+\bibitem{b6} Y. Yorozu, M. Hirano, K. Oka, and Y. Tagawa, ``Electron spectroscopy studies on magneto-optical media and plastic substrate interface,'' IEEE Transl. J. Magn. Japan, vol. 2, pp. 740--741, August 1987 [Digests 9th Annual Conf. Magnetics Japan, p. 301, 1982].
+\bibitem{b7} M. Young, The Technical Writer's Handbook. Mill Valley, CA: University Science, 1989.
+\end{thebibliography}
+\vspace{12pt}
+\color{red}
+IEEE conference templates contain guidance text for composing and formatting conference papers. Please ensure that all template text is removed from your conference paper prior to submission to the conference. Failure to remove the template text from your paper may result in your paper not being published.
+
+\end{document}
