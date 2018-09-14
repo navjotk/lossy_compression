@@ -15,6 +15,7 @@ def run(original, lossy, filename='', space_order=4, kernel='OT2', nbpml=40, **k
         lossy_u = lossy_file['data'][()]
     u = TimeFunction(name="u", grid=solver.model.grid, time_order=2, space_order=solver.space_order)
     errors = []
+    print("steps, error_norm, max_error")
     for steps in range(1, 1000, 10):
         u.data[:] = correct_u[:]
         rec, u_correct_p, summary = solver.forward(save=False, u=u, time=steps)
@@ -24,9 +25,8 @@ def run(original, lossy, filename='', space_order=4, kernel='OT2', nbpml=40, **k
         u_lossy_p = u_lossy_p.data.copy()
         error = u_correct_p - u_lossy_p
         it_errors = (steps, np.linalg.norm(error), np.max(error.data))
-        print(it_errors)
+        print(", ".join([str(x) for x in it_errors]))
         errors.append(it_errors)
-    print(errors)
 
 
 if __name__ == "__main__":

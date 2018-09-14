@@ -13,7 +13,6 @@ from util import to_hdf5
 
 
 def from_hdf5(filename, **kwargs):
-    debug("Reading file")
     f = h5py.File(filename, 'r')
     origin = kwargs.pop('origin', None)
     if origin is None:
@@ -33,7 +32,6 @@ def from_hdf5(filename, **kwargs):
     dtype = kwargs.pop('dtype', None)
     data_m = f[datakey][()]
     data_vp = np.sqrt(1/data_m).astype(dtype)
-    debug("File read complete")
     return Model(space_order=space_order, vp=data_vp, origin=origin, shape=shape,
                      dtype=dtype, spacing=spacing, nbpml=nbpml)
 
