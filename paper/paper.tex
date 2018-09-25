@@ -11,8 +11,7 @@
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 \begin{document}
 
-\title{Towards Accelerating checkpointed adjoint computations in full waveform
-  inversion using lossy compression
+\title{Combining checkpointing and data compression\\ for high frequency seismic imaging
 }
 
 \author{\IEEEauthorblockN{1\textsuperscript{st} Given Name Surname}
@@ -77,14 +76,16 @@ component, formatting, style, styling, insert
 \end{IEEEkeywords}
 
 \section{Introduction}
-Introduce fulll waveform inversion as an adjoint based optimization
-problem
-
 introduce revolve based checkpointing - cite revolve, pyrevolve
 
 introduction on compression techniques
 
 relate compression to checkpoint compression
+
+Briefly introduce full waveform inversion as an adjoint based optimization
+problem. This can be relatively short, as this is only one of many use cases
+for our technique.
+
 
 \section{Related Work}
 
@@ -112,6 +113,7 @@ requirements: should be realistic, numerically stable (to get
 realistic compression), big domain,
 large number of timesteps
 Can we use a SEAM model here?
+
 \section{Compression algorithms}
 \subsection{Lossless}
 ZLib
@@ -176,17 +178,29 @@ for compression ratio based on desired precision.
 
 \subsection{Compression vs recomputation}
 
+For this paper, we can probably focus on only zfp using 1-3 different precision settings
+(nearly lossless, very lossy, something reasonable).
+
 - Time to solution for different compression ratios, for multiple
 compression algorithms. at least one lossless compression included
 here.
 
-at least 3 compression algorithms compared
+%at least 3 compression algorithms compared
 
-vary compression ratio within bound established in previous section
+%vary compression ratio within bound established in previous section
 
 \section{Conclusions and Future work}
 
 What are the problems?
+
+Future work:
+\begin{itemize}
+\item Acceptable error bounds
+\item A posteriori and a priori metrics
+\item Relationship between compression error and field error, propagation of errors in forward simulation
+\item Relationship between compression error and gradient error in cross-correlation
+\item What else?
+\end{itemize}
 
 Disk checkpointing
 
