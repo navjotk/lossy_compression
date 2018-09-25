@@ -1,8 +1,8 @@
-all: errors images csvs plots
+all: csvs errors images plots
 
 images: uncompressed.png decompressed-t-0.png decompressed-t-8.png decompressed-t-15.png decompressed-p-6.png decompressed-p-10.png decompressed-p-19.png
 
-csvs: precision.csv tolerance.csv
+csvs: precision.csv tolerance.csv rate.csv
 
 plots: plots1 plotsn plotsm
 
@@ -51,6 +51,9 @@ precision.csv: uncompressed.h5 precision.py
 
 tolerance.csv: uncompressed.h5 tolerance.py
 	LD_LIBRARY_PATH=./zfp-0.5.3/lib python tolerance.py uncompressed.h5 > tolerance.csv
+
+rate.csv: uncompressed.h5 rate.py
+	LD_LIBRARY_PATH=./zfp-0.5.3/lib python rate.py uncompressed.h5 > rate.csv
 
 uncompressed.h5: overthrust_3D_initial_model.h5 zfp-0.5.3/lib/libzfp.so simple.py
 	LD_LIBRARY_PATH=./zfp-0.5.3/lib DEVITO_OPENMP=1 python simple.py

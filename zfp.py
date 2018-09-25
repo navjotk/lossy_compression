@@ -26,6 +26,8 @@ class ZfpField(ctypes.Structure):
 libzfp = cdll.LoadLibrary("libzfp.so")
 libzfp.zfp_stream_set_accuracy.argtypes = (ctypes.POINTER(ZfpStream), ctypes.c_double)
 libzfp.zfp_stream_set_precision.argtypes = (ctypes.POINTER(ZfpStream), ctypes.c_int)
+libzfp.zfp_stream_set_rate.argtypes = (ctypes.POINTER(ZfpStream), ctypes.c_double,
+                                       ctypes.c_int, ctypes.c_int, ctypes.c_int)
 libzfp.zfp_stream_maximum_size.argtypes = (ctypes.c_void_p, ctypes.c_void_p)
 libzfp.zfp_stream_set_bit_stream.argtypes = (ctypes.c_void_p, ctypes.c_void_p)
 libzfp.zfp_stream_rewind.argtypes = (ctypes.c_void_p,)
@@ -34,7 +36,6 @@ libzfp.zfp_field_1d.restype = ctypes.POINTER(ZfpField)
 libzfp.zfp_field_2d.restype = ctypes.POINTER(ZfpField)
 libzfp.zfp_field_3d.restype = ctypes.POINTER(ZfpField)
 libzfp.stream_open.restype = ctypes.POINTER(BitStream)
-#libzfp.zfp_stream_open.restype = ctypes.c_void_p
 
 
 
@@ -42,14 +43,16 @@ def raw_pointer(numpy_array):
     #return numpy_array.__array_interface__['data'][0]
     return ctypes.c_void_p(numpy_array.ctypes.data)
 
-def compress(indata, tolerance=None, precision=None):
-    assert(tolerance or precision)
+def compress(indata, tolerance=None, precision=None, rate=None, parallel=True):
+    assert(tolerance or precision or rate)
     assert(not(tolerance is not None and precision is not None))
+    assert(not(tolerance is not None and rate is not None))
+    assert(not(rate is not None and precision is not None))
     zfp_types = {np.dtype('float32'): 3, np.dtype('float64'): 4}
     zfp_fields = {1: libzfp.zfp_field_1d, 2: libzfp.zfp_field_2d, 3: libzfp.zfp_field_3d}
     data_type = zfp_types[indata.dtype]
     status = 1
-    shape = indata.shape
+    shape = list(reversed(indata.shape))
     
     field = zfp_fields[len(shape)](raw_pointer(indata), data_type, *shape)
     stream = libzfp.zfp_stream_open(None)
@@ -59,6 +62,15 @@ def compress(indata, tolerance=None, precision=None):
         libzfp.zfp_stream_set_accuracy(stream, tolerance)
     elif precision is not None:
         libzfp.zfp_stream_set_precision(stream, precision)
+    elif rate is not None:
+        ret = libzfp.zfp_stream_set_rate(stream, rate, data_type, len(shape), 0)
+    # Try multithreaded
+    if(parallel):
+        ret = libzfp.zfp_stream_set_execution(stream, 1)
+        if not ret:
+            print("OpenMP not supported")
+        else:
+            print("Using OpenMP")
     bufsize = libzfp.zfp_stream_maximum_size(stream, field)
     buff = ctypes.create_string_buffer(bufsize)
     bitstream = libzfp.stream_open(buff, bufsize)
@@ -71,9 +83,11 @@ def compress(indata, tolerance=None, precision=None):
     libzfp.stream_close(bitstream)
     return buff[:zfpsize]
 
-def decompress(compressed, shape, dtype, tolerance=None, precision=None):
-    assert(tolerance or precision)
+def decompress(compressed, shape, dtype, tolerance=None, precision=None, rate=None):
+    assert(tolerance or precision or rate)
     assert(not(tolerance is not None and precision is not None))
+    assert(not(tolerance is not None and rate is not None))
+    assert(not(rate is not None and precision is not None))
     outdata = np.zeros(shape, dtype=dtype)
     zfp_types = {np.dtype('float32'): 3, np.dtype('float64'): 4}
     zfp_fields = {1: libzfp.zfp_field_1d, 2: libzfp.zfp_field_2d, 3: libzfp.zfp_field_3d}
@@ -86,6 +100,8 @@ def decompress(compressed, shape, dtype, tolerance=None, precision=None):
         libzfp.zfp_stream_set_accuracy(stream, tolerance)
     elif precision is not None:
         libzfp.zfp_stream_set_precision(stream, precision)
+    elif rate is not None:
+        ret = libzfp.zfp_stream_set_rate(stream, rate, data_type, len(shape), 0)
     bufsize = libzfp.zfp_stream_maximum_size(stream, field)
     #buff = ctypes.create_string_buffer(bufsize)
     bitstream = libzfp.stream_open(compressed, bufsize)

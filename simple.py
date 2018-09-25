@@ -68,8 +68,10 @@ def run(space_order=4, kernel='OT2', nbpml=40, filename='', **kwargs):
     solver = overthrust_setup(filename=filename, nbpml=nbpml, space_order=space_order, kernel=kernel, **kwargs)
 
     rec, u, summary = solver.forward(save=False)
-    uncompressed = u.data[0]
-    to_hdf5(uncompressed, "uncompressed.h5")
+    last_time_step = solver.nt - 1
+    uncompressed = u
+    to_hdf5(uncompressed[last_time_step], "uncompressed.h5")
+    to_hdf5(uncompressed[last_time_step-1], "uncompressed.h5.1")
     
 
 
