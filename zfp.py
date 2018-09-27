@@ -67,10 +67,6 @@ def compress(indata, tolerance=None, precision=None, rate=None, parallel=True):
     # Try multithreaded
     if(parallel):
         ret = libzfp.zfp_stream_set_execution(stream, 1)
-        if not ret:
-            print("OpenMP not supported")
-        else:
-            print("Using OpenMP")
     bufsize = libzfp.zfp_stream_maximum_size(stream, field)
     buff = ctypes.create_string_buffer(bufsize)
     bitstream = libzfp.stream_open(buff, bufsize)
@@ -83,7 +79,7 @@ def compress(indata, tolerance=None, precision=None, rate=None, parallel=True):
     libzfp.stream_close(bitstream)
     return buff[:zfpsize]
 
-def decompress(compressed, shape, dtype, tolerance=None, precision=None, rate=None):
+def decompress(compressed, shape, dtype, tolerance=None, precision=None, rate=None, parallel=True):
     assert(tolerance or precision or rate)
     assert(not(tolerance is not None and precision is not None))
     assert(not(tolerance is not None and rate is not None))
@@ -92,6 +88,7 @@ def decompress(compressed, shape, dtype, tolerance=None, precision=None, rate=No
     zfp_types = {np.dtype('float32'): 3, np.dtype('float64'): 4}
     zfp_fields = {1: libzfp.zfp_field_1d, 2: libzfp.zfp_field_2d, 3: libzfp.zfp_field_3d}
     data_type = zfp_types[dtype]
+    shape = list(reversed(shape))
     field = zfp_fields[len(shape)](raw_pointer(outdata), data_type, *shape)
     stream = libzfp.zfp_stream_open(None)
     stream = ctypes.cast(stream, ctypes.POINTER(ZfpStream))
@@ -102,6 +99,9 @@ def decompress(compressed, shape, dtype, tolerance=None, precision=None, rate=No
         libzfp.zfp_stream_set_precision(stream, precision)
     elif rate is not None:
         ret = libzfp.zfp_stream_set_rate(stream, rate, data_type, len(shape), 0)
+    # Try multithreaded
+    if(parallel):
+        ret = libzfp.zfp_stream_set_execution(stream, 1)
     bufsize = libzfp.zfp_stream_maximum_size(stream, field)
     #buff = ctypes.create_string_buffer(bufsize)
     bitstream = libzfp.stream_open(compressed, bufsize)
