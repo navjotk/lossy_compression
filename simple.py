@@ -70,8 +70,8 @@ def run(space_order=4, kernel='OT2', nbpml=40, filename='', **kwargs):
     rec, u, summary = solver.forward(save=False)
     last_time_step = rec.shape[0] - 1
     uncompressed = u
-    to_hdf5(uncompressed[last_time_step], "uncompressed.h5")
-    to_hdf5(uncompressed[last_time_step-1], "uncompressed.h5.1")
+    to_hdf5(uncompressed, "uncompressed.h5")
+    #to_hdf5(uncompressed[last_time_step-1, :], "uncompressed.h5.1")
     
 
 
