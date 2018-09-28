@@ -1,8 +1,9 @@
 from argparse import ArgumentParser
-from examples.seismic.acoustic.acoustic_example import acoustic_setup, smooth10
+from examples.seismic.acoustic.acoustic_example import acoustic_setup
 from devito.logger import info, debug
 from examples.seismic import PointSource, Receiver, TimeAxis, RickerSource
 from examples.seismic.acoustic import AcousticWaveSolver
+from examples.seismic.tti import AnisotropicWaveSolver
 from examples.seismic.model import Model
 from devito import TimeFunction, Function
 import numpy as np
@@ -63,12 +64,44 @@ def overthrust_setup(filename, kernel='OT2', space_order=2, nbpml=40, **kwargs):
                                 space_order=space_order, **kwargs)
     return solver
 
+
+def overthrust_setup_tti(filename, kernel='OT2', space_order=2, nbpml=40, **kwargs):
+    model = from_hdf5(filename, space_order=space_order, nbpml=nbpml, datakey='m0', dtype=np.float32)
+    shape = model.vp.shape
+    spacing = model.shape
+    nrec = shape[0]
+    tn = 4000
+
+    # Derive timestepping from model spacing
+    dt = model.critical_dt
+    t0 = 0.0
+    time_range = TimeAxis(start=t0, stop=tn, step=dt)
+
+    # Define source geometry (center of domain, just below surface)
+    src = RickerSource(name='src', grid=model.grid, f0=0.015, time_range=time_range)
+    src.coordinates.data[0, :] = np.array(model.domain_size) * .5
+    if len(shape) > 1:
+        src.coordinates.data[0, -1] = model.origin[-1] + 2 * spacing[-1]
+    # Define receiver geometry (spread across x, just below surface)
+    rec = Receiver(name='rec', grid=model.grid, time_range=time_range, npoint=nrec)
+    rec.coordinates.data[:, 0] = np.linspace(0., model.domain_size[0], num=nrec)
+    if len(shape) > 1:
+        rec.coordinates.data[:, 1:] = src.coordinates.data[0, 1:]
+
+    # Create solver object to provide relevant operators
+    return AnisotropicWaveSolver(model, source=src, receiver=rec,
+                                 space_order=space_order, **kwargs)
+
 def run(space_order=4, kernel='OT2', nbpml=40, filename='', **kwargs):
 
-    solver = overthrust_setup(filename=filename, nbpml=nbpml, space_order=space_order, kernel=kernel, **kwargs)
+    #solver = overthrust_setup(filename=filename, nbpml=nbpml, space_order=space_order, kernel=kernel, **kwargs)
 
-    rec, u, summary = solver.forward(save=False)
+    solver = overthrust_setup_tti(filename=filename, nbpml=nbpml, space_order=space_order, kernel=kernel, **kwargs)
+
+    return_values = solver.forward(save=False)
+    rec = return_values[0]
     last_time_step = rec.shape[0] - 1
+    u = return_values[1]
     uncompressed = u.data[0]
     to_hdf5(uncompressed, "uncompressed.h5")
     #to_hdf5(uncompressed[last_time_step-1, :], "uncompressed.h5.1")

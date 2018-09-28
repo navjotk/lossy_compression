@@ -152,7 +152,30 @@ def plot(x, y, filename, title, xlabel, ylabel, hline=None, more_y=None, more_y_
             plt.legend()
     plt.savefig(filename, bbox_inches='tight')
 
+
+    
 # Plots
+
+# Problem params
+nt = 2526
+cp_size = 287*881*881*4/1000000
+
+#System params
+compute_ts = 0.36
+bandwidth = 6777
+
+# Compressions Params
+c_factor = 29.72
+c_time = 0.94
+d_time = 1.5
+t_d_time = 0.396
+
+# Plot params
+peak_mem = 2000
+more_peak_mem = [8000, 16000, 24000]
+
+compression_filename="tolerance-richter.csv"
+compression_label = "Tolerance"
 
 # (Speedup vs) varying peak memory
 
@@ -166,13 +189,13 @@ def varying_peak_memory(nt, size_ts, compute_ts, bw, c_factor, c_time, d_time,
     plot(mems, speedups, "varying-memory.png", "Speedup for varying peak memory", "Memory (MB)",
              "Speedup (x)", hline=1, more_y=[theoretical_speedup])
 
-#varying_peak_memory(2000, 287*881*881*4/1000000, 2.276333333, #time to compute one timestep (s)
-#                    7234, # Memory bandwidth from stream (MB/s)
-#                    29.72, # Compression factor
-#                    1.45, # Compression time(s)
-#                    1.65, # Decompression time(s)
-#                    0.7 # Theoretical decompression time (s)
-#                    )
+varying_peak_memory(nt, cp_size, compute_ts, #time to compute one timestep (s)
+                    bandwidth, # Memory bandwidth from stream (MB/s)
+                    c_factor, # Compression factor
+                    c_time, # Compression time(s)
+                    d_time, # Decompression time(s)
+                    t_d_time # Theoretical decompression time (s)
+                    )
 
 # (Speedup vs) varying AI. Fixed compression.
 def varying_compute(nt, size_ts, peak_mem, bw, c_factor, c_time, d_time, more_peak_mem=None):
@@ -192,13 +215,13 @@ def varying_compute(nt, size_ts, peak_mem, bw, c_factor, c_time, d_time, more_pe
     plot(computes, speedups, "varying-compute.png", "Speedup for varying compute time/timestep", "Compute time (s)",
              "Speedup (x)", hline=1, more_y=more_speedups, more_y_labels=["Peak memory: %d" % x for x in [peak_mem] + more_peak_mem])
 
-#varying_compute(2000, 287*881*881*4/1000000, 8000, # Peak memory
-#                                   7234, # Memory bandwidth from stream (MB/s)
-#                    29.72, # Compression factor
-#                    1.45, # Compression time(s)
-#                    1.65, # Decompression time(s)
-#                    more_peak_mem=[16000, 24000, 32000]
-#                    )
+varying_compute(nt, cp_size, peak_mem, # Peak memory
+                                   bandwidth, # Memory bandwidth from stream (MB/s)
+                    c_factor, # Compression factor
+                    c_time, # Compression time(s)
+                    d_time, # Decompression time(s)
+                    more_peak_mem=more_peak_mem
+                    )
 
 # (Speedup vs) compression ratios (and times)
 
@@ -211,13 +234,32 @@ def varying_compression(nt, size_ts, compute_ts, peak_mem, bw, filename, label):
     plot(x_param, speedups, "varying-compression.png", "Speedup for varying compression parameters", label,
              "Speedup (x)", hline=1)
     
-varying_compression(2000, 287*881*881*4/1000000, 2.276333333, #time to compute one timestep (s)
-                    8000, # Peak memory
-                    7234, # Memory bandwidth from stream (MB/s)
-                    "tolerance-parallel.csv", # File with compression data
-                    "Tolerance"
+varying_compression(nt, cp_size, compute_ts, #time to compute one timestep (s)
+                    peak_mem, # Peak memory
+                    bandwidth, # Memory bandwidth from stream (MB/s)
+                    compression_filename, # File with compression data
+                    compression_label
                     )
     
 # # For overthrust devito
 # # For NN
 # # For something with really high AI
+
+
+def varying_nt(size_ts, compute_ts, peak_mem, bw, f, c, d):
+    nts = linspace(2000, 20000, 200)
+    nts = [math.floor(x) for x in nts]
+    speedups = []
+    for nt in nts:
+        p = Problem(nt, size_ts, compute_ts, bw)
+        speedups.append(p.compression_speedup(peak_mem, f, c, d))
+    plot(nts, speedups, "varying-compression.png", "Speedup for varying number of timesteps", "Timesteps","Speedup (x)", hline=1)
+    
+varying_nt(cp_size, compute_ts, #time to compute one timestep (s)
+                    peak_mem, # Peak memory
+                    bandwidth, # Memory bandwidth from stream (MB/s)
+                    c_factor, c_time, d_time
+                    )
+#Where is the tipping point?
+
+# Gives a speedup for everything that is costly and for cheap stuff, when memory is very constrained
