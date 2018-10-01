@@ -7,6 +7,7 @@
 \usepackage{graphicx}
 \usepackage{textcomp}
 \usepackage{xcolor}
+\usepackage{cuted}
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 \begin{document}
@@ -86,8 +87,22 @@ Briefly introduce full waveform inversion as an adjoint based optimization
 problem. This can be relatively short, as this is only one of many use cases
 for our technique.
 
+One possible way of using compression to speed up full-waveform inversion or any adjoint-based
+optimization is by simply compressing the field data before storing it and decompressing it when it
+is required again. If the memory available is sufficient to store the complete forward data after
+compression, the use of compression effectively replaces the use of revolve-based checkpointing.
+This scenario has been discussed in different studies before - some of which we cover in the next
+section. This paper focusses on a broader region, of which this scenario is just one part. In particular,
+we discuss the scenarios where the forward field can not fit in memory even after compression, where
+compression and Revolve would be used in conjunction. 
+
+Although most of the compression we discuss here introduces some error which may or may not affect
+the final result of the computation, we try to avoid discussing the error in this paper and focus on the 
+performance impact of compression instead.
 
 \section{Related Work}
+
+
 
 Towards efficient backward-in-time adjoint computations using data
 compression techniques E.C. Cyr, J.N. Shadid, T. Wildey
@@ -166,6 +181,75 @@ ZFP
     Year = {2012}}
 
 p-adaptive compression from Boehm et al. 
+
+\section{Compression in adjoint-based optimization}
+We work with the assumption that the computation of a single forward time step takes the same wall time
+as the computation of a single reverse time step - calling this $\mathbf{C}$. If the size of a single 
+timestep in memory is $\mathbf{S}$ and the simulation involves $\mathbf{N}$ timesteps, the minimum
+wall time required to run a single forward-adjoint evaluation is given by:
+\begin{equation}
+T_N = 2 \times \mathbf{C} \times \mathbf{N}
+\end{equation}
+However, this would require $\mathbf{S} \times \mathbf{N}$ memory. On a system where enough memory
+is available, this would obviously be the optimal strategy to compute the adjoint solution. 
+
+When the memory available on a system is less than $\mathbf{S} \times \mathbf{N}$, Revolve provides
+an optimal strategy to solve for the adjoint field by storing a subset of the $\mathbf{N}$ total checkpoints
+and recompute the remaining ones. The overhead introduced by this method can be broken down into
+the recomputation overhead $\mathbf{O}_R$ and the storage overhead $\mathbf{O}_S$. The recomputation
+overhead is largely fixed and given by the following relationship (TODO cite revolve):
+\begin{strip}
+\begin{equation}
+\mathbf{O}_R(N, M) = \begin{cases}
+      N(N-1) /2, & \text{if}\ M=1 \\
+      \min\limits_{1<=\widetilde{N}<=N} \{\widetilde{N} + \mathbf{O}_R(\widetilde{N}, M) + \mathbf{O}_R(N-\widetilde{N}, M-1)\}, & \text{if}\ M>1
+    \end{cases}
+    \label{eqn:recompute}
+\end{equation}
+\end{strip}
+where M is the number of checkpoints that can be stored in memory. Note that for $M >=N$, $\mathbf{O}_R$
+would be zero. For $M < N$, $\mathbf{O}_R$ goes up rather quickly as M is reduced in relation to N. 
+
+In a perfect implementation, the storage overhead $\mathbf{O}_S$ might be zero, since the computation could
+be done "in-place", but in practice, checkpoints are generally stored in a separate section of memory and they
+need to be transferred to a "computational" section of the memory where the compute is performed, and then
+the results copied back to the checkpointing memory. This copying is a common feature of checkpointing
+implementations, and might pose a non-trivial overhead in scenarios where the computation is heavily bandwidth-bound. 
+This storage overhead is given by:
+\begin{equation}
+\mathbf{O}_SR = \mathbf{N}_W \times \frac{\mathbf{S}}{\mathbf{B}} + \mathbf{N}_R \times \frac{\mathbf{S}}{\mathbf{B}}
+\label{eqn:storage}
+\end{equation}
+where $\mathbf{N}_W$ is the total number of times Revolve writes checkpoints for a single run, $ \mathbf{N}_R$ 
+is the number of times checkpoints are read, and $\mathbf{B}$ is the memory bandwidth of the target system. 
+
+The total time to solution in this scenario becomes:
+\begin{equation}
+T_R = 2 \times \mathbf{C} \times \mathbf{N} + \mathbf{O}_R(N, M) + \mathbf{O}_S
+\end{equation}
+
+Adding compression to the mix will increase the number of checkpoints available ($M$ in equation \ref{eqn:recompute}),
+hence reducing $\mathbf{O}_R$ while adding overheads related to compression and decompression in $\mathbf{O}_S$,
+as well as some error introduced by the compression. Assuming that the error remains within the allowed tolerance,
+we hypothesize that, at least for some circumstances, the reduction in $\mathbf{O}_R$ should offset the increase in 
+$\mathbf{O}_S$, i.e. lead to an overall decrease in the total time to solution ($T$). To build a performance model that
+enables us to find the regions where compression pays off, we assume that the compression algorithm behaves uniformly
+across the different time steps of the simulation, i.e. that we get the same compression ratio, compression time and 
+decompression time, no matter which of the $N$ possible checkpoints we try to compress/decompress. The storage overhead
+now becomes:
+\begin{equation}
+\mathbf{O}_SR = \mathbf{N}_W \times (\frac{\mathbf{S}}{\mathbf{F}\mathbf{B}} + t_c) + \mathbf{N}_R \times (\frac{\mathbf{S}}{\mathbf{F}\mathbf{B}} + t_d)
+\end{equation}
+where $\mathbf{F}$ is the compression ratio (i.e. the ratio between the uncompressed and compressed checkpoint), and $t_c$
+and $t_d$ are compression and decompression times, respectively. At the same time, the recomputation overhead goes down
+because $\mathbf{F}$ times more checkpoints are now available.
+
+
+TODO add figure here that shows memory on x-axis and speedup on y axis. Split into 3 regions. Region 1, 
+where Revolve+Compression makes sense, Region 2, where compression would probably not bring in enough benefit, 
+and region 3 where compression would enable the computation to be done without revolve. 
+\section{Performance model}
+We can predict the performance
 \section{Results}
 \subsection{Error analysis}
 Discuss the error incurred due to lossy compression. This could be the
