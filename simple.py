@@ -94,11 +94,11 @@ def overthrust_setup_tti(filename, kernel='OT2', space_order=2, nbpml=40, **kwar
     return AnisotropicWaveSolver(model, source=src, receiver=rec,
                                  space_order=space_order, **kwargs)
 
-def run(space_order=4, kernel='OT2', nbpml=40, filename='', **kwargs):
+def run(space_order=4, kernel='OT4', nbpml=40, filename='', **kwargs):
 
-    #solver = overthrust_setup(filename=filename, nbpml=nbpml, space_order=space_order, kernel=kernel, **kwargs)
+    solver = overthrust_setup(filename=filename, nbpml=nbpml, space_order=space_order, kernel=kernel, **kwargs)
 
-    solver = overthrust_setup_tti(filename=filename, nbpml=nbpml, space_order=space_order, kernel=kernel, **kwargs)
+    #solver = overthrust_setup_tti(filename=filename, nbpml=nbpml, space_order=space_order, kernel=kernel, **kwargs)
 
     return_values = solver.forward(save=False)
     rec = return_values[0]

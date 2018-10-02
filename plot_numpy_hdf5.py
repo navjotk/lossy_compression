@@ -11,8 +11,6 @@ output_file = sys.argv[2]
 
 with h5py.File(input_file) as ifile:
     data = ifile['data'][()]
-    from IPython import embed
-    embed()
 
 velocity_model='overthrust_3D_initial_model.h5'
 
@@ -20,7 +18,8 @@ model = from_hdf5(velocity_model, space_order=2, nbpml=20, datakey='m0', dtype=n
 
 vmax = np.max(data)
 
-plt.imshow(data[143], vmin=-vmax, vmax=vmax, cmap="seismic")
-plt.imshow(model.vp[143], alpha=0.5)
-
+slice_loc = 400
+plt.imshow(np.transpose(data[slice_loc]), vmin=-vmax, vmax=vmax, cmap="seismic")
+plt.imshow(np.transpose(model.vp[slice_loc]), alpha=0.5)
+plt.colorbar()
 plt.savefig(output_file)
