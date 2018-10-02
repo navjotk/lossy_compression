@@ -53,21 +53,22 @@ London, UK }
 \maketitle
 
 \begin{abstract}
-Full-waveform inversion is an adjoint-based optimization problem in
-seismic imaging that processes terabytes of data, often beyond the
-memory capacity of most modern computer systems. A common technique to
-carry out the adjoint computation in an environment with
-less-than-optimal memory is checkpoint-recomputation. In this
-technique, a subset of the forward-computation states are stored in
-memory checkpoints and the others are recomputed from the stored
-states. The compression of checkpoints can increase the number of
-checkpoints available, in a given amount of memory, which, in turn,
-can reduce the recompute factor, reducing the time-to-solution of the
-adjoint computation. This compression, often comes at an additional
-computational cost, and an associated loss of precision that must be
-accounted for when choosing between compression schemes. In this
-paper, we study the effect of compression on checkpoint-recomputation
-methods in memory-constrained scenarios for a realistic FWI workload.
+Full-waveform inversion is an adjoint-based optimization problem in seismic
+imaging that processes terabytes of data and regularly exceeds the memory
+capacity of available computers. A popular strategy to reduce the memory
+requirement is data compression, which can reduce the memory
+footprint by a certain factor. An alternative is
+checkpointing, where data is stored at selected points in
+time, and values at other times are recomputed as needed from the last stored state.
+This allows arbitrarily large adjoint computations with limited memory, at the cost
+of additional recomputations.
+
+In this paper we combine compression and checkpointing for the first
+time to compute a realistic full-waveform inversion. The combination of
+checkpointing and compression allows
+larger adjoint computations compared to using only compression, and
+reduces the recomputation overhead significantly compared to using only checkpointing.
+
 \end{abstract}
 
 \begin{IEEEkeywords}
