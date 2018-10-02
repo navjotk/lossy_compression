@@ -40,7 +40,7 @@ def from_hdf5(filename, **kwargs):
 def overthrust_setup(filename, kernel='OT2', space_order=2, nbpml=40, **kwargs):
     model = from_hdf5(filename, space_order=space_order, nbpml=nbpml, datakey='m0', dtype=np.float32)
     shape = model.vp.shape
-    spacing = model.shape
+    spacing = model.spacing
     nrec = shape[0]
     tn = 4000
 
@@ -57,6 +57,8 @@ def overthrust_setup(filename, kernel='OT2', space_order=2, nbpml=40, **kwargs):
     # Define receiver geometry (spread across x, just below surface)
     rec = Receiver(name='rec', grid=model.grid, time_range=time_range, npoint=nrec)
     rec.coordinates.data[:, 0] = np.linspace(0., model.domain_size[0], num=nrec)
+    from IPython import embed
+    embed()
     if len(shape) > 1:
         rec.coordinates.data[:, 1:] = src.coordinates.data[0, 1:]
 

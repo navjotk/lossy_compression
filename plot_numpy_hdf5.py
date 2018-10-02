@@ -18,7 +18,7 @@ model = from_hdf5(velocity_model, space_order=2, nbpml=20, datakey='m0', dtype=n
 
 vmax = np.max(data)
 
-slice_loc = 400
+slice_loc = 440
 plt.imshow(np.transpose(data[slice_loc]), vmin=-vmax, vmax=vmax, cmap="seismic")
 plt.imshow(np.transpose(model.vp[slice_loc]), alpha=0.5)
 plt.colorbar()
