@@ -107,11 +107,10 @@ time to compute a realistic full-waveform inversion. The combination of
 checkpointing and compression allows
 larger adjoint computations compared to using only compression, and
 reduces the recomputation overhead significantly compared to using only checkpointing.
-
 \end{abstract}
 
 \begin{IEEEkeywords}
-Checkpointing, compression, adjoints, inversion
+component, formatting, style, styling, insert
 \end{IEEEkeywords}
 
 \section{Introduction}
@@ -271,17 +270,22 @@ When the memory available on a system is less than $\mathbf{S} \times \mathbf{N}
 an optimal strategy to solve for the adjoint field by storing a subset of the $\mathbf{N}$ total checkpoints
 and recomputing the remaining ones. The overhead introduced by this method can be broken down into
 the recomputation overhead $\mathbf{O}_R$ and the storage overhead $\mathbf{O}_S$. The recomputation
-overhead is largely fixed and given by the following relationship (TODO cite revolve):
-\begin{strip}
+overhead is simply the amount of time spent in recomputation, given by:
 \begin{equation}
-\mathbf{O}_R(N, M) = \begin{cases}
+\mathbf{O}_R(N, M) = p(N, M) \cdot \mathbf{C}
+\end{equation}
+where $p(N, M)$ is the minimum number of recomputed steps from TODO cite revolve, reproduced
+here in equation \ref{eqn:recompute}.
+\begin{figure*}
+\begin{equation}
+p(N, M) = \begin{cases}
       N(N-1) /2, & \text{if}\ M=1 \\
       \min\limits_{1<=\widetilde{N}<=N} \{\widetilde{N} + \mathbf{O}_R(\widetilde{N}, M) + \mathbf{O}_R(N-\widetilde{N}, M-1)\}, & \text{if}\ M>1
     \end{cases}
     \label{eqn:recompute}
 \end{equation}
-\end{strip}
-where M is the number of checkpoints that can be stored in memory. Note that for $M >=N$, $\mathbf{O}_R$
+\end{figure*}
+In equation \ref{eqn:recompute}, M is the number of checkpoints that can be stored in memory. Note that for $M >=N$, $\mathbf{O}_R$
 would be zero. For $M < N$, $\mathbf{O}_R$ goes up rather quickly as M is reduced in relation to N. 
 
 In a perfect implementation, the storage overhead $\mathbf{O}_S$ might be zero, since the computation could
@@ -291,7 +295,7 @@ the results copied back to the checkpointing memory. This copying is a common fe
 implementations, and might pose a non-trivial overhead in scenarios where the computation is heavily bandwidth-bound. 
 This storage overhead is given by:
 \begin{equation}
-\mathbf{O}_SR = \mathbf{N}_W \times \frac{\mathbf{S}}{\mathbf{B}} + \mathbf{N}_R \times \frac{\mathbf{S}}{\mathbf{B}}
+\mathbf{O}_SR = \mathbf{N}_W \cdot \frac{\mathbf{S}}{\mathbf{B}} + \mathbf{N}_R \times \frac{\mathbf{S}}{\mathbf{B}}
 \label{eqn:storage}
 \end{equation}
 where $\mathbf{N}_W$ is the total number of times Revolve writes checkpoints for a single run, $ \mathbf{N}_R$ 

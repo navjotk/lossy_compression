@@ -28,18 +28,19 @@ def from_hdf5(filename, **kwargs):
     datakey = kwargs.pop('datakey', None)
     if datakey is None:
         raise ValueError("datakey must be known - what is the name of the data in the file?")
-    shape = f[datakey].shape
     space_order=kwargs.pop('space_order', None)
     dtype = kwargs.pop('dtype', None)
     data_m = f[datakey][()]
     data_vp = np.sqrt(1/data_m).astype(dtype)
+    data_vp = np.transpose(data_vp, (1, 2, 0))
+    shape = data_vp.shape
     return Model(space_order=space_order, vp=data_vp, origin=origin, shape=shape,
                      dtype=dtype, spacing=spacing, nbpml=nbpml)
 
 def overthrust_setup(filename, kernel='OT2', space_order=2, nbpml=40, **kwargs):
     model = from_hdf5(filename, space_order=space_order, nbpml=nbpml, datakey='m0', dtype=np.float32)
     shape = model.vp.shape
-    spacing = model.shape
+    spacing = model.spacing
     nrec = shape[0]
     tn = 4000
 
@@ -49,13 +50,15 @@ def overthrust_setup(filename, kernel='OT2', space_order=2, nbpml=40, **kwargs):
     time_range = TimeAxis(start=t0, stop=tn, step=dt)
 
     # Define source geometry (center of domain, just below surface)
-    src = RickerSource(name='src', grid=model.grid, f0=0.01, time_range=time_range)
+    src = RickerSource(name='src', grid=model.grid, f0=0.005, time_range=time_range)
     src.coordinates.data[0, :] = np.array(model.domain_size) * .5
     if len(shape) > 1:
         src.coordinates.data[0, -1] = model.origin[-1] + 2 * spacing[-1]
     # Define receiver geometry (spread across x, just below surface)
     rec = Receiver(name='rec', grid=model.grid, time_range=time_range, npoint=nrec)
     rec.coordinates.data[:, 0] = np.linspace(0., model.domain_size[0], num=nrec)
+    from IPython import embed
+    embed()
     if len(shape) > 1:
         rec.coordinates.data[:, 1:] = src.coordinates.data[0, 1:]
 
@@ -82,6 +85,7 @@ def overthrust_setup_tti(filename, kernel='OT2', space_order=2, nbpml=40, **kwar
     src.coordinates.data[0, :] = np.array(model.domain_size) * .5
     if len(shape) > 1:
         src.coordinates.data[0, -1] = model.origin[-1] + 2 * spacing[-1]
+
     # Define receiver geometry (spread across x, just below surface)
     rec = Receiver(name='rec', grid=model.grid, time_range=time_range, npoint=nrec)
     rec.coordinates.data[:, 0] = np.linspace(0., model.domain_size[0], num=nrec)
@@ -92,11 +96,11 @@ def overthrust_setup_tti(filename, kernel='OT2', space_order=2, nbpml=40, **kwar
     return AnisotropicWaveSolver(model, source=src, receiver=rec,
                                  space_order=space_order, **kwargs)
 
-def run(space_order=4, kernel='OT2', nbpml=40, filename='', **kwargs):
+def run(space_order=4, kernel='OT4', nbpml=40, filename='', **kwargs):
 
-    #solver = overthrust_setup(filename=filename, nbpml=nbpml, space_order=space_order, kernel=kernel, **kwargs)
+    solver = overthrust_setup(filename=filename, nbpml=nbpml, space_order=space_order, kernel=kernel, **kwargs)
 
-    solver = overthrust_setup_tti(filename=filename, nbpml=nbpml, space_order=space_order, kernel=kernel, **kwargs)
+    #solver = overthrust_setup_tti(filename=filename, nbpml=nbpml, space_order=space_order, kernel=kernel, **kwargs)
 
     return_values = solver.forward(save=False)
     rec = return_values[0]
