@@ -278,7 +278,7 @@ where $p(N, M)$ is the minimum number of recomputed steps from TODO cite revolve
 here in equation \ref{eqn:recompute}.
 \begin{figure*}
 \begin{equation}
-\mathbf{O}_R(N, M) = \begin{cases}
+p(N, M) = \begin{cases}
       N(N-1) /2, & \text{if}\ M=1 \\
       \min\limits_{1<=\widetilde{N}<=N} \{\widetilde{N} + \mathbf{O}_R(\widetilde{N}, M) + \mathbf{O}_R(N-\widetilde{N}, M-1)\}, & \text{if}\ M>1
     \end{cases}

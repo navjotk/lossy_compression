@@ -33,6 +33,7 @@ def from_hdf5(filename, **kwargs):
     dtype = kwargs.pop('dtype', None)
     data_m = f[datakey][()]
     data_vp = np.sqrt(1/data_m).astype(dtype)
+    data_vp = np.flip(data_vp, (1, 2, 0))
     return Model(space_order=space_order, vp=data_vp, origin=origin, shape=shape,
                      dtype=dtype, spacing=spacing, nbpml=nbpml)
 
@@ -82,6 +83,7 @@ def overthrust_setup_tti(filename, kernel='OT2', space_order=2, nbpml=40, **kwar
     src.coordinates.data[0, :] = np.array(model.domain_size) * .5
     if len(shape) > 1:
         src.coordinates.data[0, -1] = model.origin[-1] + 2 * spacing[-1]
+
     # Define receiver geometry (spread across x, just below surface)
     rec = Receiver(name='rec', grid=model.grid, time_range=time_range, npoint=nrec)
     rec.coordinates.data[:, 0] = np.linspace(0., model.domain_size[0], num=nrec)
