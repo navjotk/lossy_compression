@@ -33,7 +33,7 @@ def from_hdf5(filename, **kwargs):
     dtype = kwargs.pop('dtype', None)
     data_m = f[datakey][()]
     data_vp = np.sqrt(1/data_m).astype(dtype)
-    data_vp = np.flip(data_vp, (1, 2, 0))
+    data_vp = np.transpose(data_vp, (1, 2, 0))
     return Model(space_order=space_order, vp=data_vp, origin=origin, shape=shape,
                      dtype=dtype, spacing=spacing, nbpml=nbpml)
 
