@@ -10,34 +10,33 @@
 \usepackage{cuted}
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+\newcommand*\Laplace{\mathop{}\!\mathbin\bigtriangleup}
 \begin{document}
 
 \title{Combining checkpointing and data compression\\ for high frequency seismic imaging
 }
 
-\author{\IEEEauthorblockN{1\textsuperscript{st} Given Name Surname}
-\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
-\textit{name of organization (of Aff.)}\\
-City, Country \\
-email address}
+\author{\IEEEauthorblockN{Navjot Kukreja}
+\IEEEauthorblockA{\textit{Department of Earth Science and Engineering} \\
+\textit{Imperial College London}\\
+London, UK \\
+n.kukreja@imperial.ac.uk}
 \and
-\IEEEauthorblockN{2\textsuperscript{nd} Given Name Surname}
-\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
-\textit{name of organization (of Aff.)}\\
-City, Country \\
-email address}
+\IEEEauthorblockN{Jan H\"uckelheim}
+\IEEEauthorblockA{\textit{Department of Earth Science and Engineering}\\
+\textit{Imperial College London}\\
+London, UK }
 \and
-\IEEEauthorblockN{3\textsuperscript{rd} Given Name Surname}
-\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
-\textit{name of organization (of Aff.)}\\
-City, Country \\
-email address}
+\IEEEauthorblockN{Mathias Louboutin}
+\IEEEauthorblockA{\textit{TODO Mathias} \\
+\textit{Georgia Institute of Technology}\\
+Atlanta, GA, USA\\}
 \and
-\IEEEauthorblockN{4\textsuperscript{th} Given Name Surname}
-\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
-\textit{name of organization (of Aff.)}\\
-City, Country \\
-email address}
+\IEEEauthorblockN{Kaiyuan Hou}
+\IEEEauthorblockA{\textit{Department of EECS} \\
+\textit{Northwestern University}\\
+Evanston, IL, USA \\
+}
 \and
 \IEEEauthorblockN{5\textsuperscript{th} Given Name Surname}
 \IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
@@ -45,11 +44,10 @@ email address}
 City, Country \\
 email address}
 \and
-\IEEEauthorblockN{6\textsuperscript{th} Given Name Surname}
-\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
-\textit{name of organization (of Aff.)}\\
-City, Country \\
-email address}
+\IEEEauthorblockN{Gerard Gorman}
+\IEEEauthorblockA{\textit{Department of Earth Science and Engineering}\\
+\textit{Imperial College London}\\
+London, UK }
 }
 
 \maketitle
@@ -77,15 +75,37 @@ component, formatting, style, styling, insert
 \end{IEEEkeywords}
 
 \section{Introduction}
-introduce revolve based checkpointing - cite revolve, pyrevolve
+The class of adjoint-based optimization problems has a very typical data access pattern where a
+simulation is run ``forward" in simulation time, which produces data that is to be used by a
+subsequent adjoint pass which is run backward in simulation time TODO CITE. Figure TODO
+shows the typical data access pattern. This class consists of many different problems of interest in
+science and engineering. One problem in this class is full-waveform inversion (FWI) where physical
+experiments are carried out by propagating seismic waves through the earth's subsurface and the
+solution to the optimization problem gives the most likely structure of the earth's subsurface. Figure
+TODO shows the physical setup of the experiment that produces the data that this problem operates
+on. The data access pattern from Figure TODO applies here as well, since every step during the
+adjoint propagation requires data from the corresponding step from the forward propagation. In
+particular for FWI, this data can reach tens of terabytes in size, which is beyond the memory
+available on most hardware. While this paper is written to be focussed on FWI as the target problem, 
+the analysis can be applied to any problem with a similar data-access pattern. 
 
-introduction on compression techniques
 
-relate compression to checkpoint compression
+Various strategies are routinely employed to reduce this memory requirement, for example 
+Domain decomposition (TODO cite) where the domain of the simulation is distributed over
+multiple nodes so as to fit within the memory available on each node. This introduces the overhead
+of network communication and might not efficiently use the computational resources on each node.
+Another common strategy, which is specific to the domain of FWI, is where only the boundaries of
+the domain are stored at each timestep and the rest of the wavefield is reconstructed from the
+boundaries when required (TODO CITE). Another commonly used strategy that is applied across
+a much wider domain of problems is checkpointing. In this strategy, a subset of the data from the
+forward pass is stored (and the rest discarded). The discarded data is recomputed when required
+by rerunning the forward pass. Starting from Revolve (TODO cite), which was a provably optimal
+scheduling algorithm to implement this strategy, various studies have used and extended this
+technique to various scenarios (TODO cite other checkpointing papers). 
 
-Briefly introduce full waveform inversion as an adjoint based optimization
-problem. This can be relatively short, as this is only one of many use cases
-for our technique.
+introduction on compression techniques - TODO Jan
+Compression is an obvious addition to the tools applied to the specific data access pattern 
+
 
 One possible way of using compression to speed up full-waveform inversion or any adjoint-based
 optimization is by simply compressing the field data before storing it and decompressing it when it
@@ -101,88 +121,67 @@ the final result of the computation, we try to avoid discussing the error in thi
 performance impact of compression instead.
 
 \section{Related Work}
+\cite{cyr2015towards}
+
+\cite{dalmau2014lossy}
+
+\cite{fichtner2009full}
+
+\cite{gpu-compression}
+
+\cite{boehm2016wavefield}
+\cite{gpu-compression}
+\cite{Kaklamanis:2012aa}
+
+TODO cite SZ (Frank Cappello)
+\section{Test case using Devito and pyRevolve}
+We use Devito \cite{devito-compiler} \cite{devito-api} to setup wave equation solvers for forward and
+adjoint modes. Devito is a domain-specific language to enable the rapid development of finite-difference
+solvers from a high-level description of the partial differential equation. The simplest version of the wave
+equation is the acoustic:
+\begin{equation}
+m(x)\frac{\partial^2 u(t, x)}{\partial t^2} - \Laplace u(t, x) = q(t, x)
+\end{equation}
+where $m(x) = \frac{1}{c^2(x)}$ is the squared slowness with $c(x)$ the spatially dependent speed of sound, 
+$u(t, x)$ is the wavefield, $\Laplace u(t, x)$ denotes the laplacian of the wavefield and $q(t, x)$ is the source.
+Some of the kernels used in the performance measurements corresponded to a more physically representative
+but complex version of this equation called Tilted Transverse Isotropy (TTI) \cite{zhang2011stable}. We leave the 
+equation itself out of this paper for brevity. 
+
+The values of $m(x)$ were derived from the SEAM Overthrust (TODO Cite SEAM) model which was over a grid
+of $287 \times 881 \times 881$ points, including an absorbing layer of 40 points on each side. The grid spacing
+was TODO in space and TODO in time. This was run for TODO timesteps, and the final field stored as
+representative of a typical snapshot. Figure TODO shows this stored field that was used for the compression tests. 
 
 
+To implement Revolve with Devito, we used pyRevolve (TODO CITE 2 papers) which is a python wrapper over the
+original Revolve utility (TODO CITE Revolve). The performance model that will be developed in section TODO of
+this paper assumes that the implementation is similar to pyRevolve, which stores a checkpoint by copying a portion
+of the operator's working memory to the checkpointing memory and similarly loads a checkpoint by copying from the
+checkpointing memory to the operator's working memory. Although a perfect implementation of checkpointing may
+be able to avoid these copies, the overhead attached to these copies can be ignored for an operator that is
+sufficiently computationally intensive. However, we include the overheads in the model to verify this assumption. 
 
-Towards efficient backward-in-time adjoint computations using data
-compression techniques E.C. Cyr, J.N. Shadid, T. Wildey
+The experiments were run on two different systems, TODO description of Richter, henceforth called Richter and a
+TODO description of skylake, henceforth called Skylake.
 
-Lossy Data Compression with DCT Transforms F. Rubio Dalmau,
-M. Hanzich, J. de la Puente and N. Gutierrez 
-
-Full seismic waveform tomography for upper-mantle structure in the
-Australasian region using adjoint methods
-Andreas Fichtner,1 Brian L. N. Kennett,2 Heiner Igel1 and Hans-Peter
-Bunge1
-
-
-\section{Devito, pyRevolve, test case}
-short introduction to devito and how to setup a forward-backward
-propagator using it - some justification on why this is a realistic
-setup even though it might seem like a toy problem
-
-how does pyrevolve implement checkpointing
-
-test case setup.
-requirements: should be realistic, numerically stable (to get
-realistic compression), big domain,
-large number of timesteps
-Can we use a SEAM model here?
 
 \section{Compression algorithms}
 \subsection{Lossless}
-ZLib
-
-variations in compression ratios
+For our initial experiments, we used the python package \emph{blosc} (TODO CITE). It includes implementations for
+6 different lossless compression algorithms, namely ZLIB, ZSTD, BLOSC, LZ4, LZ4HC and TODO (TODO cite all of them).
+We did a parameter sweep over all available parameters to find the best-performing combinations. 
 \subsection{Lossy}
-ZFP
-@inproceedings{lossless,
-    Acmid = {1126035},
-    Address = {Washington, DC, USA},
-    Author = {Ratanaworabhan, Paruj and Ke, Jian and Burtscher, Martin},
-    Booktitle = {Proceedings of the Data Compression Conference},
-    Date-Added = {2015-05-03 20:40:52 +0000},
-    Date-Modified = {2018-01-31 10:20:09 +0000},
-    Isbn = {0-7695-2545-8},
-    Numpages = {10},
-    Pages = {133--142},
-    Publisher = {IEEE Computer Society},
-    Series = {DCC '06},
-    Title = {Fast Lossless Compression of Scientific Floating-Point Data},
-    Year = {2006}}
+Next we tried lossy compression using ZFP \cite{ratanaworabhan2006fast} (TODO verify citation).
+We tried all three modes of ZFP, namely fixed-tolerance, fixed-precision and fixed-rate modes. Figure TODO shows the compression ratios
+we saw for a variety of compression settings for the three modes. As expected, the highest compression efficiency was
+observed in the fixed-tolerance mode albeit with highly unpredictable compression ratios. Figure TODO shows a sample
+wavefield that was recovered after compression and decompression using TODO mode. Since, in our experiments, the time
+taken to compress a checkpoint was in the same order of magnitude as the time taken to compute a timestep, we build a
+performance model in the next section to evaluate the utility of compression in different scenarios of problem setups and test
+platforms.
 
-@conference{gpu-compression,
-    Author = {O'Neil, Molly A. and Burtscher, Martin},
-    Booktitle = {Proceedings of the Fourth Workshop on General Purpose Processing on Graphics Processing Units},
-    Date-Added = {2015-05-03 22:40:52 +0000},
-    Date-Modified = {2015-05-03 22:42:57 +0000},
-    Keywords = {GPGPU, floating-point data, lossless data compression, real-time compression},
-    Number = {10.1145/1964179.1964189},
-    Publisher = {ACM},
-    Title = {Floating-point Data Compression at 75 Gb/s on a {GPU}},
-    Year = {2011},
-}
-@inbook{Kaklamanis:2012aa,
-    Author = {Kaklamanis, Christos and Papatheodorou, Theodore and Spirakis, PaulG. and Iverson, Jeremy and Kamath, Chandrika and Karypis, George},
-    Booktitle = {Euro-Par 2012 Parallel Processing},
-    Chapter = {Fast and Effective Lossy Compression Algorithms for Scientific Datasets},
-    Da = {2012/01/01},
-    Date-Added = {2015-05-03 22:46:47 +0000},
-    Date-Modified = {2018-01-31 10:20:09 +0000},
-    Isbn = {978-3-642-32819-0},
-    La = {English},
-    Pages = {843-856},
-    Publisher = {Springer Berlin Heidelberg},
-    Se = {83},
-    Title = {Lecture Notes in Computer Science},
-    Title1 = {Fast and Effective Lossy Compression Algorithms for Scientific Datasets},
-    Ty = {CHAP},
-    Volume = {7484},
-    Year = {2012}}
-
-p-adaptive compression from Boehm et al. 
-
-\section{Compression in adjoint-based optimization}
+\section{Performance model for a combination of Revolve and compression}
 We work with the assumption that the computation of a single forward time step takes the same wall time
 as the computation of a single reverse time step - calling this $\mathbf{C}$. If the size of a single 
 timestep in memory is $\mathbf{S}$ and the simulation involves $\mathbf{N}$ timesteps, the minimum
@@ -190,12 +189,12 @@ wall time required to run a single forward-adjoint evaluation is given by:
 \begin{equation}
 T_N = 2 \times \mathbf{C} \times \mathbf{N}
 \end{equation}
-However, this would require $\mathbf{S} \times \mathbf{N}$ memory. On a system where enough memory
-is available, this would obviously be the optimal strategy to compute the adjoint solution. 
+However, this would require $\mathbf{S} \times \mathbf{N}$ memory. On a hardware platform where enough memory
+is available, this would be the optimal strategy to compute the adjoint solution. 
 
 When the memory available on a system is less than $\mathbf{S} \times \mathbf{N}$, Revolve provides
 an optimal strategy to solve for the adjoint field by storing a subset of the $\mathbf{N}$ total checkpoints
-and recompute the remaining ones. The overhead introduced by this method can be broken down into
+and recomputing the remaining ones. The overhead introduced by this method can be broken down into
 the recomputation overhead $\mathbf{O}_R$ and the storage overhead $\mathbf{O}_S$. The recomputation
 overhead is largely fixed and given by the following relationship (TODO cite revolve):
 \begin{strip}
@@ -248,30 +247,8 @@ because $\mathbf{F}$ times more checkpoints are now available.
 TODO add figure here that shows memory on x-axis and speedup on y axis. Split into 3 regions. Region 1, 
 where Revolve+Compression makes sense, Region 2, where compression would probably not bring in enough benefit, 
 and region 3 where compression would enable the computation to be done without revolve. 
-\section{Performance model}
-We can predict the performance
 \section{Results}
-\subsection{Error analysis}
-Discuss the error incurred due to lossy compression. This could be the
-angular deviation in the gradient from Boehm et al. as a factor of the
-precision parameter, for about 3 different compression schemes  What if a minor
-deviation is at a point where you're pointing directly at a
-constraint? or a corner point between two constraints? The line search
-may mistakenly terminate early. This should be used to derive a bound
-for compression ratio based on desired precision. 
 
-\subsection{Compression vs recomputation}
-
-For this paper, we can probably focus on only zfp using 1-3 different precision settings
-(nearly lossless, very lossy, something reasonable).
-
-- Time to solution for different compression ratios, for multiple
-compression algorithms. at least one lossless compression included
-here.
-
-%at least 3 compression algorithms compared
-
-%vary compression ratio within bound established in previous section
 
 \section{Conclusions and Future work}
 
@@ -290,43 +267,11 @@ Disk checkpointing
 
 \section*{Acknowledgment}
 
-The preferred spelling of the word ``acknowledgment'' in America is without 
-an ``e'' after the ``g''. Avoid the stilted expression ``one of us (R. B. 
-G.) thanks $\ldots$''. Instead, try ``R. B. G. thanks$\ldots$''. Put sponsor 
-acknowledgments in the unnumbered footnote on the first page.
+TODO (Acknowledgments for Navjot)
+TODO (Acknowledgments for Jan)
+TODO (Acknowledgments for Mathias)
 
-\section*{References}
-
-Please number citations consecutively within brackets \cite{b1}. The 
-sentence punctuation follows the bracket \cite{b2}. Refer simply to the reference 
-number, as in \cite{b3}---do not use ``Ref. \cite{b3}'' or ``reference \cite{b3}'' except at 
-the beginning of a sentence: ``Reference \cite{b3} was the first $\ldots$''
-
-Number footnotes separately in superscripts. Place the actual footnote at 
-the bottom of the column in which it was cited. Do not put footnotes in the 
-abstract or reference list. Use letters for table footnotes.
-
-Unless there are six authors or more give all authors' names; do not use 
-``et al.''. Papers that have not been published, even if they have been 
-submitted for publication, should be cited as ``unpublished'' \cite{b4}. Papers 
-that have been accepted for publication should be cited as ``in press'' \cite{b5}. 
-Capitalize only the first word in a paper title, except for proper nouns and 
-element symbols.
-
-For papers published in translation journals, please give the English 
-citation first, followed by the original foreign-language citation \cite{b6}.
-
-\begin{thebibliography}{00}
-\bibitem{b1} G. Eason, B. Noble, and I. N. Sneddon, ``On certain integrals of Lipschitz-Hankel type involving products of Bessel functions,'' Phil. Trans. Roy. Soc. London, vol. A247, pp. 529--551, April 1955.
-\bibitem{b2} J. Clerk Maxwell, A Treatise on Electricity and Magnetism, 3rd ed., vol. 2. Oxford: Clarendon, 1892, pp.68--73.
-\bibitem{b3} I. S. Jacobs and C. P. Bean, ``Fine particles, thin films and exchange anisotropy,'' in Magnetism, vol. III, G. T. Rado and H. Suhl, Eds. New York: Academic, 1963, pp. 271--350.
-\bibitem{b4} K. Elissa, ``Title of paper if known,'' unpublished.
-\bibitem{b5} R. Nicole, ``Title of paper with only first word capitalized,'' J. Name Stand. Abbrev., in press.
-\bibitem{b6} Y. Yorozu, M. Hirano, K. Oka, and Y. Tagawa, ``Electron spectroscopy studies on magneto-optical media and plastic substrate interface,'' IEEE Transl. J. Magn. Japan, vol. 2, pp. 740--741, August 1987 [Digests 9th Annual Conf. Magnetics Japan, p. 301, 1982].
-\bibitem{b7} M. Young, The Technical Writer's Handbook. Mill Valley, CA: University Science, 1989.
-\end{thebibliography}
-\vspace{12pt}
-\color{red}
-IEEE conference templates contain guidance text for composing and formatting conference papers. Please ensure that all template text is removed from your conference paper prior to submission to the conference. Failure to remove the template text from your paper may result in your paper not being published.
+\bibliographystyle{plain}
+\bibliography{compression}
 
 \end{document}
