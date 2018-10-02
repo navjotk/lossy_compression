@@ -94,14 +94,13 @@ London, UK }
 
 \begin{abstract}
 Full-waveform inversion is an adjoint-based optimization problem in seismic
-imaging that processes terabytes of data and regularly exceeds the memory
-capacity of available computers. A popular strategy to reduce the memory
-requirement is data compression, which can reduce the memory
-footprint by a certain factor. An alternative is
-checkpointing, where data is stored at selected points in
-time, and values at other times are recomputed as needed from the last stored state.
-This allows arbitrarily large adjoint computations with limited memory, at the cost
-of additional recomputations.
+imaging that processes terabytes of data, regularly exceeding the memory
+capacity of available computers. Data compression is an effective strategy to
+reduce this memory requirement by a certain factor, particularly if some loss in
+accuracy is acceptable. A popular alternative is checkpointing, where data is
+stored at selected points in time, and values at other times are recomputed as
+needed from the last stored state.  This allows arbitrarily large adjoint
+computations with limited memory, at the cost of additional recomputations.
 
 In this paper we combine compression and checkpointing for the first
 time to compute a realistic full-waveform inversion. The combination of
