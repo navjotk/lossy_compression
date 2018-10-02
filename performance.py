@@ -1,5 +1,6 @@
 from pyrevolve import Operator, Checkpoint, Revolver
 
+from itertools import product
 import math
 import numpy as np
 import matplotlib.pyplot as plt
@@ -195,9 +196,6 @@ def varying_peak_memory(nt, size_ts, compute_ts, bw, c_factor, c_time, d_time,
     min_time, overall_peak_mem = p.naive_strategy()
     mems = linspace(2*size_ts, overall_peak_mem/c_factor, 200)
     speedups = [p.compression_speedup(x, c_factor, c_time, d_time) for x in mems]
-    print(speedups)
-    print("***")
-    print(mems)
     theoretical_speedup = [p.compression_speedup(x, c_factor, c_time, theoretical_d_time) for x in mems]
     fixed = {'Timesteps': nt, 'Size of checkpoint (MB)': size_ts,
              'Time for compute step (s)': compute_ts, 'Bandwidth (MB/s)': bw,
@@ -298,3 +296,24 @@ varying_nt(cp_size, compute_ts, #time to compute one timestep (s)
 #Where is the tipping point?
 
 # Gives a speedup for everything that is costly and for cheap stuff, when memory is very constrained
+
+
+def vary_all(size_ts, bw, f, c, d):
+    nts = linspace(2000, 20000, 200)
+    nts = [math.floor(x) for x in nts]
+    computes = linspace(0, 100, 200)
+
+    results = np.zeros((200, 200, 200))
+
+    for i, nt in enumerate(nts):
+        for j, compute in enumerate(computes):
+            p = Problem(nt, size_ts, compute, bw)
+            min_time, overall_peak_mem = p.naive_strategy()
+            mems = linspace(2*size_ts, overall_peak_mem/c_factor, 200)
+            for k, mem in enumerate(mems):
+                results[i, j, k] = p.compression_speedup(mem, f, c, d)
+
+    np.save('results', results)
+
+vary_all(cp_size, bandwidth, c_factor, c_time, d_time)
+    

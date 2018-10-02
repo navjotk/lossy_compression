@@ -8,6 +8,46 @@
 \usepackage{textcomp}
 \usepackage{xcolor}
 \usepackage{cuted}
+\usepackage{tikz}
+\usepackage{pgfplots}
+
+
+\usetikzlibrary{calc,trees,positioning,arrows,chains,shapes.geometric,%
+    decorations.pathreplacing,decorations.pathmorphing,shapes,%
+    matrix,shapes.symbols}
+
+\tikzstyle{line} = [draw, -, thick]
+\tikzstyle{nodraw} = [draw, fill, circle, minimum width=0pt, inner sep=0pt]
+\tikzstyle{box} = [line, rectangle, rounded corners, text centered]
+
+\tikzset{
+>=stealth',
+  punktchain/.style={
+    rectangle, 
+    rounded corners, 
+    draw=black, very thick,
+    text width=2em, 
+    minimum height=3em, 
+    text centered, 
+    on chain},
+  line/.style={draw, thick, <-},
+  element/.style={
+    tape,
+    top color=white,
+    bottom color=blue!50!black!60!,
+    minimum width=1em,
+    draw=blue!40!black!90, very thick,
+    text width=2em, 
+    minimum height=3.5em, 
+    text centered, 
+    on chain},
+  every join/.style={->, thick,shorten >=1pt},
+  decoration={brace},
+  tuborg/.style={decorate},
+  tubnode/.style={midway, right=2pt},
+}
+
+
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 \newcommand*\Laplace{\mathop{}\!\mathbin\bigtriangleup}
@@ -77,18 +117,25 @@ component, formatting, style, styling, insert
 \section{Introduction}
 The class of adjoint-based optimization problems has a very typical data access pattern where a
 simulation is run ``forward" in simulation time, which produces data that is to be used by a
-subsequent adjoint pass which is run backward in simulation time TODO CITE. Figure TODO
+subsequent adjoint pass which is run backward in simulation time TODO CITE. Figure \ref{fig:dataflow}
 shows the typical data access pattern. This class consists of many different problems of interest in
 science and engineering. One problem in this class is full-waveform inversion (FWI) where physical
 experiments are carried out by propagating seismic waves through the earth's subsurface and the
 solution to the optimization problem gives the most likely structure of the earth's subsurface. Figure
-TODO shows the physical setup of the experiment that produces the data that this problem operates
-on. The data access pattern from Figure TODO applies here as well, since every step during the
+\ref{fig:offshore_survey} shows the physical setup of the experiment that produces the data that this problem operates
+on. The data access pattern from Figure \ref{fig:dataflow} applies here as well, since every step during the
 adjoint propagation requires data from the corresponding step from the forward propagation. In
 particular for FWI, this data can reach tens of terabytes in size, which is beyond the memory
 available on most hardware. While this paper is written to be focussed on FWI as the target problem, 
 the analysis can be applied to any problem with a similar data-access pattern. 
 
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.8\linewidth]{images/survey-ship-diagram.png}
+\end{center}
+\caption{Illustration of an offshore seismic survey that collects the input data for FWI}
+\label{fig:offshore_survey}
+\end{figure}
 
 Various strategies are routinely employed to reduce this memory requirement, for example 
 Domain decomposition (TODO cite) where the domain of the simulation is distributed over
@@ -102,6 +149,14 @@ forward pass is stored (and the rest discarded). The discarded data is recompute
 by rerunning the forward pass. Starting from Revolve (TODO cite), which was a provably optimal
 scheduling algorithm to implement this strategy, various studies have used and extended this
 technique to various scenarios (TODO cite other checkpointing papers). 
+
+\begin{figure*}
+\begin{center}
+\input{dataflow}
+\end{center}
+\caption{The dataflow pattern that is typical of adjoint-based optimization problems}
+\label{fig:dataflow}
+\end{figure*}
 
 introduction on compression techniques - TODO Jan
 Compression is an obvious addition to the tools applied to the specific data access pattern 
@@ -151,8 +206,15 @@ equation itself out of this paper for brevity.
 The values of $m(x)$ were derived from the SEAM Overthrust (TODO Cite SEAM) model which was over a grid
 of $287 \times 881 \times 881$ points, including an absorbing layer of 40 points on each side. The grid spacing
 was TODO in space and TODO in time. This was run for TODO timesteps, and the final field stored as
-representative of a typical snapshot. Figure TODO shows this stored field that was used for the compression tests. 
+representative of a typical snapshot. Figure \ref{fig:uncompressed} shows this stored field that was used for the compression tests. 
 
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.8\linewidth]{images/uncompressed.png}
+\end{center}
+\caption{Cross-section of the wavefield used as a reference sample for compression and decompression}
+\label{fig:uncompressed}
+\end{figure}
 
 To implement Revolve with Devito, we used pyRevolve (TODO CITE 2 papers) which is a python wrapper over the
 original Revolve utility (TODO CITE Revolve). The performance model that will be developed in section TODO of
@@ -172,14 +234,27 @@ For our initial experiments, we used the python package \emph{blosc} (TODO CITE)
 6 different lossless compression algorithms, namely ZLIB, ZSTD, BLOSC, LZ4, LZ4HC and TODO (TODO cite all of them).
 We did a parameter sweep over all available parameters to find the best-performing combinations. 
 \subsection{Lossy}
-Next we tried lossy compression using ZFP \cite{ratanaworabhan2006fast} (TODO verify citation).
+Next we tried lossy compression using ZFP \cite{ratanaworabhan2006fast} (TODO verify citation). To use ZFP from python, 
+we first wrote a python wrapper over the reference implementation of ZFP, which is in C. We plan to release this wrapper
+in the open source community shortly. 
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.8\linewidth]{images/decompressed-t-8.png}
+\end{center}
+\caption{Cross-section of the wavefield recovered after compression and decompression using the fixed-tolerance mode}
+\label{fig:decompressed}
+\end{figure}
+
 We tried all three modes of ZFP, namely fixed-tolerance, fixed-precision and fixed-rate modes. Figure TODO shows the compression ratios
 we saw for a variety of compression settings for the three modes. As expected, the highest compression efficiency was
-observed in the fixed-tolerance mode albeit with highly unpredictable compression ratios. Figure TODO shows a sample
-wavefield that was recovered after compression and decompression using TODO mode. Since, in our experiments, the time
+observed in the fixed-tolerance mode albeit with highly unpredictable compression ratios. Figure \ref{fig:decompressed} shows a sample
+wavefield that was recovered after compression and decompression using fixed-tolerance mode. Since, in our experiments, the time
 taken to compress a checkpoint was in the same order of magnitude as the time taken to compute a timestep, we build a
 performance model in the next section to evaluate the utility of compression in different scenarios of problem setups and test
 platforms.
+
+
 
 \section{Performance model for a combination of Revolve and compression}
 We work with the assumption that the computation of a single forward time step takes the same wall time

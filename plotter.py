@@ -14,7 +14,7 @@ def read_csv_file(filename):
             if i == 0:
                 headings = row
             else:
-                data.append(row)
+                data.append([float(x) for x in row])
     data = list(zip(*data))
     return data, headings
         
@@ -25,6 +25,7 @@ def plot(x, y, filename, title, xlabel, ylabel):
     plt.ylabel(ylabel)
     plt.title(title)
     plt.xticks(rotation=90)
+    plt.xscale('log')
     plt.savefig(filename, bbox_inches='tight')
 
 if __name__ == "__main__":
