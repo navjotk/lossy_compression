@@ -50,7 +50,7 @@ def overthrust_setup(filename, kernel='OT2', space_order=2, nbpml=40, **kwargs):
     time_range = TimeAxis(start=t0, stop=tn, step=dt)
 
     # Define source geometry (center of domain, just below surface)
-    src = RickerSource(name='src', grid=model.grid, f0=0.01, time_range=time_range)
+    src = RickerSource(name='src', grid=model.grid, f0=0.005, time_range=time_range)
     src.coordinates.data[0, :] = np.array(model.domain_size) * .5
     if len(shape) > 1:
         src.coordinates.data[0, -1] = model.origin[-1] + 2 * spacing[-1]
