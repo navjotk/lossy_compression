@@ -28,12 +28,12 @@ def from_hdf5(filename, **kwargs):
     datakey = kwargs.pop('datakey', None)
     if datakey is None:
         raise ValueError("datakey must be known - what is the name of the data in the file?")
-    shape = f[datakey].shape
     space_order=kwargs.pop('space_order', None)
     dtype = kwargs.pop('dtype', None)
     data_m = f[datakey][()]
     data_vp = np.sqrt(1/data_m).astype(dtype)
     data_vp = np.transpose(data_vp, (1, 2, 0))
+    shape = data_vp.shape
     return Model(space_order=space_order, vp=data_vp, origin=origin, shape=shape,
                      dtype=dtype, spacing=spacing, nbpml=nbpml)
 
