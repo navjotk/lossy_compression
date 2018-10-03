@@ -281,7 +281,11 @@ this single time step field is just under 900MB.
 \begin{center}
 \includegraphics[width=0.8\linewidth]{images/uncompressed.pdf}
 \end{center}
-\caption{Cross-section of the wavefield used as a reference sample for compression and decompression}
+\caption{Cross-section of the wavefield used as a reference sample for
+  compression and decompression. This field was formed after a Ricker
+  wavelet source was placed at TODO and the wave propagated for 2500
+  timesteps. This is a vertical cross-section of a 3D field, taken at
+  the source location}
 \label{fig:uncompressed}
 \end{figure}
 
@@ -313,7 +317,13 @@ implementation of ZFP.
 \begin{center}
 \includegraphics[width=0.8\linewidth]{images/errors.pdf}
 \end{center}
-\caption{Cross-section of the field that shows errors introduced during compression and decompression using the fixed-tolerance mode}
+\caption{Cross-section of the field that shows errors introduced
+  during compression and decompression using the fixed-tolerance
+  mode. It is interesting to note that the errors are more or less
+  evenly distributed across the domain with only slight variations
+  corresponding to the wave amplitude (from the field plot in figure
+  \ref{uncompressed}. A small block-like structure characteristic of
+  ZFP can be seen.}
 \label{fig:decompressed_error}
 \end{figure}
 
@@ -423,6 +433,17 @@ time, the recomputation overhead decreases
 because $\mathbf{F}$ times more checkpoints are now available.
 
 \section{Results}
+We notice that the combination of compression and checkpointing
+outperforms pure checkpointing in some scenarios, and that wherever
+possible, compression alone outperforms checkpointing. This is made
+evident in figure \ref{fig:varying_memory} which shows a clear split
+in three different regions. The right-most region of this plot has
+been the focus of many studies mentioned earlier in this paper. The
+extension to the regions with lower memory is new here and we see that
+the maximum benefit is gained in the most memory-constrained scenarios
+(region 1), while there is a region where Revolve-based recomputation
+alone would be more beneficial (region 2). As expected, compression
+alone (with no Revolve) dominates region 3.
 Figure \ref{fig:varying_memory} shows the speedups predicted by the
 performance model for varying amount of available memory. A big
 shortcoming that was realised in ZFP was the lack of parallelization
@@ -432,14 +453,7 @@ the benefit from parallel decompression, we scaled the serial
 decompression time by the same factor that we saw between the serial
 and parallel compressors on a given platform. We called this scaled
 decompression time, ``theoretical decompression time'' and show this
-on the plot with a dotted line. The
-right-most region of this plot has been the focus of many studies
-mentioned earlier in this paper. The extension to the regions with
-lower memory is new here and we see that the maximum benefit is gained
-in the most memory-constrained scenarios (region 1), while there is a
-region where Revolve-based recomputation alone would be more
-beneficial (region 2). As expected, compression alone (with no
-Revolve) dominates region 3. 
+on the plot with a dotted line. 
 \begin{figure}
 \begin{center}
 \includegraphics[width=\linewidth]{images/varying-memory.pdf}
@@ -497,10 +511,53 @@ beneficial as the number of timesteps is increased.}
 \label{fig:varying_nt}
 \end{figure}
 \section{Conclusions and Future work}
-
 What are the problems?
+The performance we developed might be useful in judging whether compression
+would be helpful in a particular scenario without actually building a
+complete implementation first. We have tried to keep it application
+and platform agnostic in order to maximize its applicability. However
+there are a few limitations in this model. Firstly, we assumed that
+the compression performance we saw for a single checkpoint is
+representative of any checkpoint throughout the simulation. This
+assumption might have been completely wrong if made about a checkpoint
+in the first few time steps since we consistently saw upto 800x
+compression in those cases - since they are mostly zeros. In order for
+this assumption to be realistic, we use a checkpoint close to the end
+of the simulation so that most of the field is perturbed and hence is
+close to the worst case in terms of compression results. 
+
+In comparing pure compression with pure checkpointing, we assume that every
+checkpoint would be compressed and decompressed. However, in scenarios
+where the available memory is only slightly less than the required
+memory, an implementation that compresses only a subset of the
+checkpoints might outperform the expectations of our model. 
+
+
 
 Future work:
+
+This work is focussed on checkpointing in memory alone. In a future
+work we would like to extend this performance model to include
+checkpointing to disk. 
+
+The ZFP algorithm that the majority of this paper was based on, only
+supports fields with up to 3 dimensions. Since our field is evolving
+in time, we would expect some correlations in the time dimensions that
+are currently not being exploited in the compression.
+
+As can be seen in figure \ref{fig:varying_memory}, the lack of
+parallel decompression has a significant impact on the overall time to
+solution. This strategy would become much more beneficial once we
+start seeing faster decompression speeds. 
+
+In this work, we have ignored the error that is induced by the lossy
+compression - assuming that a tolerance of $10^{-4}$ is acceptable for
+the application. This assumption needs to be verified in a formal
+analysis of how the error in the field propagates through the
+simulation, and how it finally affects the cross-correlated gradient. 
+The development of a priori and a posteriori error metrics would
+greatly help the further use of lossy compression in similar
+problems. 
 \begin{itemize}
 \item Acceptable error bounds
 \item A posteriori and a priori metrics
@@ -509,15 +566,9 @@ Future work:
 \item What else?
 \end{itemize}
 
-More than 3D fields (use time correlation)
-
-Parallel decompression
-
-Disk checkpointing
-
 \section*{Acknowledgment}
 This work was funded by the Intel Parallel Computing Centre at
-Imperial College London and EPSRC EP/R029423/1 . 
+Imperial College London and EPSRC EP/R029423/1. 
 This work was supported by the U.S. Department of Energy, Office of Science,
 Office of Advanced Scientific Computing Research, Applied Mathematics and
 Computer Science programs under contract number DE-AC02-06CH11357.

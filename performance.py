@@ -243,7 +243,7 @@ def varying_compute(nt, size_ts, peak_mem, bw, c_factor, c_time, d_time, more_pe
              'Compression Factor': c_factor, 'Compression Time (s)': c_time,
              'Decompression time (s)': d_time,}
     plot(computes, speedups, "varying-compute.pdf",
-         "Speedup for varying compute time/timestep", "Compute time (s)", "Speedup (x)",
+         "Speedup for varying compute/timestep", "Compute time (s)", "Speedup (x)",
          hline=1, more_y=more_speedups,
          more_y_labels=["Peak memory: %d" % x for x in [peak_mem] + more_peak_mem],
          fixed=fixed, xscale='log', textloc=[0.55, 0.55])
