@@ -110,23 +110,30 @@ reduces the recomputation overhead significantly compared to using only checkpoi
 \end{abstract}
 
 \begin{IEEEkeywords}
-component, formatting, style, styling, insert
+Checkpointing, compression, adjoints, inversion
 \end{IEEEkeywords}
 
 \section{Introduction}
-The class of adjoint-based optimization problems has a very typical data access pattern where a
-simulation is run ``forward" in simulation time, which produces data that is to be used by a
-subsequent adjoint pass which is run backward in simulation time. Figure \ref{fig:dataflow}
-shows the typical data access pattern. This class consists of many different problems of interest in
-science and engineering. One problem in this class is full-waveform inversion (FWI) where physical
-experiments are carried out by propagating seismic waves through the earth's subsurface and the
-solution to the optimization problem gives the most likely structure of the earth's subsurface. Figure
-\ref{fig:offshore_survey} shows the physical setup of the experiment that produces the data that this problem operates
-on. \cite{plessix2006review} The data access pattern from Figure \ref{fig:dataflow} applies here as well, since every step during the
-adjoint propagation requires data from the corresponding step from the forward propagation. In
-particular for FWI, this data can reach tens of terabytes in size, which is beyond the memory
-available on most hardware. While this paper is written to be focussed on FWI as the target problem, 
-the analysis can be applied to any problem with a similar data-access pattern. 
+Adjoint-based optimization problems typically consist of a simulation that is
+run forward in simulation time, producing data that is used in reverse order by
+a subsequent adjoint computation that is run backwards in simulation time.
+Figure~\ref{fig:dataflow} shows the resulting data flow. Many important
+applications in science and engineering have this structure, including
+full-waveform inversion (FWI).
+
+In FWI, the propagation of seismic waves through the earth's subsurface is
+simulated and compared with data from real-world measurements. The model of the
+subsurface is iteratively improved by minimizing the misfit between simulation and
+measurement in an adjoint optimization problem.
+Figure~\ref{fig:offshore_survey} shows the setup of the real-world experiment that
+produces the measurement data~\cite{plessix2006review}. Storing all intermediate
+results as required for the data flow shown in Figure~\ref{fig:dataflow} is not
+feasible, since this would require tens of terabytes of memory, which is not
+commonly available on the machines used to solve these problems. To solve this
+problem, a number of strategies are used that are discussed in the following
+paragraphs. While this paper uses FWI as a test case, most of these ideas,
+including the one presented in this work, are also applicable to other adjoint
+optimization problems.
 
 \begin{figure}
 \begin{center}
@@ -136,18 +143,26 @@ the analysis can be applied to any problem with a similar data-access pattern.
 \label{fig:offshore_survey}
 \end{figure}
 
-Various strategies are routinely employed to reduce this memory requirement, for example 
-Domain decomposition where the domain of the simulation is distributed over
-multiple nodes so as to fit within the memory available on each node. This introduces the overhead
-of network communication and might not efficiently use the computational resources on each node.\cite{virieux2009seismic}
-Another common strategy, which is specific to the domain of FWI, is where only the boundaries of
-the domain are stored at each timestep and the rest of the wavefield is reconstructed from the
-boundaries when required \cite{clapp2009reverse}\cite{yang2014rtm}. Another commonly used strategy that is applied across
-a much wider domain of problems is checkpointing. In this strategy, a subset of the data from the
-forward pass is stored (and the rest discarded). The discarded data is recomputed when required
-by rerunning the forward pass. Starting from Revolve \cite{griewank2000algorithm}, which is a provably optimal
-scheduling algorithm to implement this strategy, various studies have used and extended this
-technique to various scenarios \cite{wang2009minimal} \cite{aupy2016optimal} \cite{schanen2016asynchronous}.
+Domain decomposition is often used not only to distribute the computational
+workload across more processors, but also to utilise the large amount of memory
+available in distributed systems. While this strategy is very powerful, the
+number of compute nodes and therefore the amount of memory that can be used
+efficiently is limited, for example by communication overheads that start to
+dominate as the domain is split into increasingly small
+pieces~\cite{virieux2009seismic}.
+Another common strategy in FWI is to only store values at the boundaries of the
+domain at each timestep, and reconstruct the rest of the wavefield when
+required~\cite{clapp2009reverse,yang2014rtm}.
+
+Checkpointing is yet another strategy to reduce the memory overhead. Only a
+subset of the program states during the forward pass is stored (and the rest
+discarded).  The discarded data is recomputed when needed by restarting the
+forward pass from the last available stored state. The question which states
+should be stored and which states should be recomputed to minimize the total
+amount of recomputation work has been answerd under certain assumptions with the
+Revolve algorithm~\cite{griewank2000algorithm}.  Other authors have subsequently
+developed extensions to Revolve that are optimal under less restrictive
+assumptions~\cite{wang2009minimal,aupy2016optimal,schanen2016asynchronous}.
 
 \begin{figure*}
 \begin{center}
@@ -157,51 +172,66 @@ technique to various scenarios \cite{wang2009minimal} \cite{aupy2016optimal} \ci
 \label{fig:dataflow}
 \end{figure*}
 
-Another strategy to reduce the memory footprint of scientific applications is
-data compression. Well-known general purpose data compression algorithms like
-Zlib (which is a part of gzip) \cite{deutsch1996zlib}, and compression for video and image
-data such as JPEG-2000 \cite{skodras2001jpeg}have been used for scientific data. More
-recently, special purpose compression algorithms for floating-point scientific data have been
-developed, such as ZFP or SZ \cite{lindstrom2014fixed} \cite{di2018efficient} 
-\cite{Kaklamanis:2012aa} \cite{ratanaworabhan2006fast}.
 
-Lossless algorithms guarantee that the exact original data can be
-recovered during decompression, whereas lossy algorithms introduce an error, but
-often guarantee that the error does not exceed certain absolute or relative
-error metrics. Typically, lossy compression is more effective in reducing the
-data size, or in other words, offer a greater compression ratio. Most popular
-compression packages offer various settings that allow a tradeoff between
-compression ratio, accuracy, and compression and decompression time. In this
-work we use the ZFP package to perform lossy compresssion.
+Data compression is also increasingly used to reduce the memory footprint of
+scientific applications. General purpose data compression algorithms like Zlib
+(which is a part of gzip)~\cite{deutsch1996zlib}, and compression algorithms for
+video and image data such as JPEG-2000~\cite{skodras2001jpeg} have been
+presented in previous work. More recently, special purpose compression
+algorithms for floating-point scientific data have been developed, such as ZFP
+or SZ~\cite{Kaklamanis:2012aa,lindstrom2014fixed,di2018efficient}.
 
-It is worth noting that another popular data reduction strategy is to typecast
-values into a lower precision format, for example, from double precision to
-single precision TODO cite. This can be seen as a computationally cheap lossy
-compression algorithm with a compression ratio of $2$.
+Lossless algorithms guarantee that the exact original data can be recovered
+during decompression, whereas lossy algorithms introduce an error, but often
+guarantee that the error does not exceed certain absolute or relative error
+metrics. Typically, lossy compression is more effective in reducing the data
+size. Most popular compression packages offer various settings that allow a
+tradeoff between compression ratio, accuracy, and compression and decompression
+time. In this work we use the ZFP package to perform lossy compresssion.
+
+It is worth noting that another data reduction strategy is to typecast values
+into a lower precision format, for example, from double precision to single
+precision. This can be seen as a computationally cheap lossy compression
+algorithm with a compression ratio of $2$.
 
 Perhaps counterintuitively, compression can not only reduce the memory
 footprint, but also speed up an application. Previous work has observed that the
 compression and decompression time can be less than the time saved from the
 reduction in data that needs to be communicated across MPI nodes or between a
-GPU and a host computer. There has been some work on streaming compression
-of floating-point data for this specific intent. \cite{gpu-compression}
+GPU and a host computer~\cite{gpu-compression}.
 
-One possible way of using compression to speed up full-waveform inversion or any adjoint-based
-optimization is by simply compressing the field data before storing it and decompressing it when it
-is required again. If the memory available is sufficient to store the complete forward data after
-compression, the use of compression effectively replaces the use of revolve-based checkpointing.
-This scenario has been discussed in different studies before - they look at Revolve as an alternative
-to compression. This approach was seen for a study of adjoint-based methods on the Navier-Stokes
-equation \cite{cyr2015towards}. This was also studied in the context of seismic imaging and FWI
-to develop tailored compression methods for the wavefield data that is typically seen in this context - 
-including a compression method based on DCT \cite{dalmau2014lossy} and one based on adaptive
-coarsening \cite{boehm2016wavefield}. This paper focusses on a broader region, of which this scenario
-is just one part. In particular, we discuss the scenarios where the forward field can not fit in memory even
-after compression, where compression and Revolve would be used in conjunction. 
+Another way of using compression to speed up FWI or other adjoint-based methods
+is to use it \emph{instead} of checkpointing. If the compression ratio is
+sufficient to fit the entire data in memory, checkpointing is no longer
+necessary. Previous work has discussed this situation in the context of
+computational fluid dynamics~\cite{cyr2015towards} and FWI using compression
+method specifically designed for
+wavefields~\cite{dalmau2014lossy,boehm2016wavefield}.
 
-Although most of the compression we discuss here introduces some error which may or may not affect
-the final result of the computation, we try to avoid discussing the error in this paper and focus on the 
-performance impact of compression instead.
+In this paper, we extend the previous studies by \emph{combining} checkpointing
+and compression. This is obviously useful when the data does not fit in the
+available memory even after compression, for example for very large adjoint
+problems, or for problems where the required accuracy limits the achievable
+compression ratios.
+
+Compared to using only checkpointing without compression, our combined method
+often improves performance. This is a consequence of the reduced size of stored
+program states, allowing more program states to be stored during the forward
+computation. This in turn reduces the amount of recomputation that needs to be
+performed. On the other hand, the compression and decompression itself takes
+time. We thereforen provide a comprehensive performance model that predicts
+whether the combined method is beneficial, that is, whether the time spent
+compressing and decompressing is less than the time saved by reduced
+recomputations. We present various scenarios that use a TODO describe Richter
+and TODO describe JLSE/SKX node system, error tolerances for the lossy ZFP
+compression algorithm ranging from TODO to TODO, and different types of forward
+and adjoint computations that vary in their ratio between compute cost and state
+size. 
+
+Our aim is to make this discussion independent of the hardware, application and
+compression algorithm. We therefore do not discuss whether or not the accuracy
+of the decompressed data is sufficient for our application, or whether
+other algorithms might achieve a better accuracy/compression tradeoff.
 
 \section{Test case using Devito and pyRevolve}
 We use Devito \cite{devito-compiler} \cite{devito-api} to setup wave equation solvers for forward and
