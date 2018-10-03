@@ -10,6 +10,7 @@
 \usepackage{cuted}
 \usepackage{tikz}
 \usepackage{pgfplots}
+\usepackage{url}
 
 
 \usetikzlibrary{calc,trees,positioning,arrows,chains,shapes.geometric,%
@@ -391,8 +392,8 @@ stored in memory. Note that for $M >=N$, $\mathbf{O}_R$ would be zero. For $M <
 N$, $\mathbf{O}_R$ grows rapidly as M is reduced relative to N. 
 
 In an ideal implementation, the storage overhead $\mathbf{O}_S$ might be zero, since the computation could
-be done "in-place", but in practice, checkpoints are generally stored in a separate section of memory and they
-need to be transferred to a "computational" section of the memory where the compute is performed, and then
+be done ``in-place'', but in practice, checkpoints are generally stored in a separate section of memory and they
+need to be transferred to a ``computational'' section of the memory where the compute is performed, and then
 the results copied back to the checkpointing memory. This copying is a common feature of checkpointing
 implementations, and might pose a non-trivial overhead in scenarios where the computation is heavily bandwidth-bound. 
 This storage overhead is given by
@@ -423,9 +424,9 @@ across the different time steps of the simulation, i.e. that we get the same com
 decompression time, no matter which of the $N$ possible checkpoints we try to compress/decompress. The storage overhead
 now becomes
 \begin{equation}
-\mathbf{O}_{SR} = \mathbf{N}_W \cdot (\frac{\mathbf{S}}{\mathbf{F}
-  \cdot \mathbf{B}} + t_c) + \mathbf{N}_R \cdot
-(\frac{\mathbf{S}}{\mathbf{F} \cdot \mathbf{B}} + t_d)
+\mathbf{O}_{SR} = \mathbf{N}_W \cdot \left(\frac{\mathbf{S}}{\mathbf{F}
+  \cdot \mathbf{B}} + t_c\right) + \mathbf{N}_R \cdot
+\left(\frac{\mathbf{S}}{\mathbf{F} \cdot \mathbf{B}} + t_d\right)
 \end{equation}
 where $\mathbf{F}$ is the compression ratio (i.e. the ratio between the uncompressed and compressed checkpoint), and $t_c$
 and $t_d$ are compression and decompression times, respectively. At the same
@@ -474,7 +475,7 @@ that has been well-studied in past work.}
 \label{fig:varying_memory}
 \end{figure}
 
-Figure \ref{fig:varying_compute} shows the speedups predicted by the
+Figure~\ref{fig:varying_compute} shows the speedups predicted by the
 performance model for kernels of different computational cost. Perhaps
 unsurprisingly, the benefit gained by compression drops rapidly if the
 time to compute a single timestep is less than the time to compress
@@ -495,7 +496,7 @@ costs, the benefits are bounded.}
 \label{fig:varying_compute}
 \end{figure}
 
-Figure \ref{fig:varying_nt} shows the speedups predicted for differing
+Figure~\ref{fig:varying_nt} shows the speedups predicted for differing
 number of timesteps. It is interesting to note that there is a
 consistent increase in the speedup as the number of timesteps goes
 up. 
@@ -510,6 +511,7 @@ same conditions. It can be seen that compression becomes more
 beneficial as the number of timesteps is increased.}
 \label{fig:varying_nt}
 \end{figure}
+
 \section{Conclusions and Future work}
 What are the problems?
 The performance we developed might be useful in judging whether compression
@@ -585,7 +587,7 @@ Joint Laboratory for System Evaluation (JLSE) at Argonne National Laboratory.
 \vfill
 \begin{flushright}
 \normalsize
-\framebox{\parbox{4.8in}{The submitted manuscript has been created by UChicago
+\framebox{\parbox{3in}{The submitted manuscript has been created by UChicago
 Argonne, LLC, Operator of Argonne National Laboratory (`Argonne'). Argonne, a
 U.S. Department of Energy Office of Science laboratory, is operated under
 Contract No. DE-AC02-06CH11357. The U.S. Government retains for itself, and
@@ -594,7 +596,7 @@ license in said article to reproduce, prepare derivative works, distribute
 copies to the public, and perform publicly and display publicly, by or on behalf
 of the Government.  The Department of Energy will provide public access to these
 results of federally sponsored research in accordance with the DOE Public Access
-Plan. \texttt{http://energy.gov/downloads/doe-public-access-plan}.}}
+Plan.\newline \url{http://energy.gov/downloads/doe-public-access-plan}.}}
 \end{flushright}
 
 \end{document}
