@@ -127,7 +127,7 @@ def platform_name():
     return platform
 
 def plot(x, y, filename, title, xlabel, ylabel, hline=None, more_y=None, more_y_labels=None,
-         fixed=None, xscale=None):
+         fixed=None, xscale=None, yscale=None):
     plt.gcf().clear()
     if more_y_labels is not None:
         # We need labels for every series in more_y and one for the main series
@@ -159,7 +159,10 @@ def plot(x, y, filename, title, xlabel, ylabel, hline=None, more_y=None, more_y_
         title += "\n" + fixed_params
     plt.title(title)
     if xscale is not None:
-        plt.xscale(xscale, basex=2)
+        plt.xscale(xscale)
+
+    if yscale is not None:
+        plt.yscale(yscale)
     plt.savefig(filename, bbox_inches='tight')
 
 
@@ -172,8 +175,9 @@ cp_size = 287*881*881*4/1000000
 
 #System params
 compute_ts = 1.11
-bandwidth = 6777
-platform = "2 x Intel(R) Xeon(R) CPU E5-2640 v3 @ 2.60GHz (8C)" # Richter
+#bandwidth = 6777 # Richter
+bandwidth = 8139.2 # Skylake
+platform = "Skylake" # Richter
 
 # Compressions Params
 c_factor = 29.72
@@ -194,7 +198,7 @@ def varying_peak_memory(nt, size_ts, compute_ts, bw, c_factor, c_time, d_time,
                         theoretical_d_time):
     p = Problem(nt, size_ts, compute_ts, bw)
     min_time, overall_peak_mem = p.naive_strategy()
-    mems = linspace(2*size_ts, overall_peak_mem/c_factor, 200)
+    mems = linspace(4*size_ts, overall_peak_mem, 200)
     speedups = [p.compression_speedup(x, c_factor, c_time, d_time) for x in mems]
     theoretical_speedup = [p.compression_speedup(x, c_factor, c_time, theoretical_d_time) for x in mems]
     fixed = {'Timesteps': nt, 'Size of checkpoint (MB)': size_ts,
@@ -315,5 +319,5 @@ def vary_all(size_ts, bw, f, c, d):
 
     np.save('results', results)
 
-vary_all(cp_size, bandwidth, c_factor, c_time, d_time)
+#vary_all(cp_size, bandwidth, c_factor, c_time, d_time)
     

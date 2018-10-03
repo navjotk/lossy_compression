@@ -57,8 +57,6 @@ def overthrust_setup(filename, kernel='OT2', space_order=2, nbpml=40, **kwargs):
     # Define receiver geometry (spread across x, just below surface)
     rec = Receiver(name='rec', grid=model.grid, time_range=time_range, npoint=nrec)
     rec.coordinates.data[:, 0] = np.linspace(0., model.domain_size[0], num=nrec)
-    from IPython import embed
-    embed()
     if len(shape) > 1:
         rec.coordinates.data[:, 1:] = src.coordinates.data[0, 1:]
 
@@ -97,10 +95,12 @@ def overthrust_setup_tti(filename, kernel='OT2', space_order=2, nbpml=40, **kwar
                                  space_order=space_order, **kwargs)
 
 def run(space_order=4, kernel='OT4', nbpml=40, filename='', **kwargs):
-
-    solver = overthrust_setup(filename=filename, nbpml=nbpml, space_order=space_order, kernel=kernel, **kwargs)
-
-    #solver = overthrust_setup_tti(filename=filename, nbpml=nbpml, space_order=space_order, kernel=kernel, **kwargs)
+    if kernel in ['OT2', 'OT4']:
+        solver = overthrust_setup(filename=filename, nbpml=nbpml, space_order=space_order, kernel=kernel, **kwargs)
+    elif kernel == 'TTI':
+        solver = overthrust_setup_tti(filename=filename, nbpml=nbpml, space_order=space_order, kernel=kernel, **kwargs)
+    else:
+        raise ValueError()
 
     return_values = solver.forward(save=False)
     rec = return_values[0]
@@ -120,7 +120,7 @@ if __name__ == "__main__":
     parser.add_argument("--nbpml", default=40,
                         type=int, help="Number of PML layers around the domain")
     parser.add_argument("-k", dest="kernel", default='OT2',
-                        choices=['OT2', 'OT4'],
+                        choices=['OT2', 'OT4', 'TTI'],
                         help="Choice of finite-difference kernel")
     parser.add_argument("-dse", default="advanced",
                         choices=["noop", "basic", "advanced",
