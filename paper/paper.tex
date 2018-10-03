@@ -116,13 +116,13 @@ component, formatting, style, styling, insert
 \section{Introduction}
 The class of adjoint-based optimization problems has a very typical data access pattern where a
 simulation is run ``forward" in simulation time, which produces data that is to be used by a
-subsequent adjoint pass which is run backward in simulation time TODO CITE. Figure \ref{fig:dataflow}
+subsequent adjoint pass which is run backward in simulation time. Figure \ref{fig:dataflow}
 shows the typical data access pattern. This class consists of many different problems of interest in
 science and engineering. One problem in this class is full-waveform inversion (FWI) where physical
 experiments are carried out by propagating seismic waves through the earth's subsurface and the
 solution to the optimization problem gives the most likely structure of the earth's subsurface. Figure
 \ref{fig:offshore_survey} shows the physical setup of the experiment that produces the data that this problem operates
-on. The data access pattern from Figure \ref{fig:dataflow} applies here as well, since every step during the
+on. \cite{plessix2006review} The data access pattern from Figure \ref{fig:dataflow} applies here as well, since every step during the
 adjoint propagation requires data from the corresponding step from the forward propagation. In
 particular for FWI, this data can reach tens of terabytes in size, which is beyond the memory
 available on most hardware. While this paper is written to be focussed on FWI as the target problem, 
@@ -137,17 +137,17 @@ the analysis can be applied to any problem with a similar data-access pattern.
 \end{figure}
 
 Various strategies are routinely employed to reduce this memory requirement, for example 
-Domain decomposition (TODO cite) where the domain of the simulation is distributed over
+Domain decomposition where the domain of the simulation is distributed over
 multiple nodes so as to fit within the memory available on each node. This introduces the overhead
-of network communication and might not efficiently use the computational resources on each node.
+of network communication and might not efficiently use the computational resources on each node.\cite{virieux2009seismic}
 Another common strategy, which is specific to the domain of FWI, is where only the boundaries of
 the domain are stored at each timestep and the rest of the wavefield is reconstructed from the
-boundaries when required (TODO CITE). Another commonly used strategy that is applied across
+boundaries when required \cite{clapp2009reverse}\cite{yang2014rtm}. Another commonly used strategy that is applied across
 a much wider domain of problems is checkpointing. In this strategy, a subset of the data from the
 forward pass is stored (and the rest discarded). The discarded data is recomputed when required
-by rerunning the forward pass. Starting from Revolve (TODO cite), which is a provably optimal
+by rerunning the forward pass. Starting from Revolve \cite{griewank2000algorithm}, which is a provably optimal
 scheduling algorithm to implement this strategy, various studies have used and extended this
-technique to various scenarios (TODO cite other checkpointing papers). 
+technique to various scenarios \cite{wang2009minimal} \cite{aupy2016optimal} \cite{schanen2016asynchronous}.
 
 \begin{figure*}
 \begin{center}
@@ -158,11 +158,12 @@ technique to various scenarios (TODO cite other checkpointing papers).
 \end{figure*}
 
 Another strategy to reduce the memory footprint of scientific applications is
-data compression. Well-known general purpose data compression packages such as
-gzip TODO cite or 7zip TODO cite, and compression for video and image
-data such as JPEG-2000 TODO cite have been used for scientific data. More
-recently, special purpose compression algorithms for scientific data have been
-developed, such as ZFP or SZ TODO cite.
+data compression. Well-known general purpose data compression algorithms like
+Zlib (which is a part of gzip) \cite{deutsch1996zlib}, and compression for video and image
+data such as JPEG-2000 \cite{skodras2001jpeg}have been used for scientific data. More
+recently, special purpose compression algorithms for floating-point scientific data have been
+developed, such as ZFP or SZ \cite{lindstrom2014fixed} \cite{di2018efficient} 
+\cite{Kaklamanis:2012aa}.
 
 Lossless algorithms guarantee that the exact original data can be
 recovered during decompression, whereas lossy algorithms introduce an error, but
@@ -182,42 +183,26 @@ Perhaps counterintuitively, compression can not only reduce the memory
 footprint, but also speed up an application. Previous work has observed that the
 compression and decompression time can be less than the time saved from the
 reduction in data that needs to be communicated across MPI nodes or between a
-GPU and a host computer TODO cite.
+GPU and a host computer. There has been some work on streaming compression
+of floating-point data for this specific intent. \cite{gpu-compression}
 
-Another possible way of using compression to speed up full-waveform inversion or any adjoint-based
+One possible way of using compression to speed up full-waveform inversion or any adjoint-based
 optimization is by simply compressing the field data before storing it and decompressing it when it
 is required again. If the memory available is sufficient to store the complete forward data after
 compression, the use of compression effectively replaces the use of revolve-based checkpointing.
-This scenario has been discussed in different studies before - some of which we cover in the next
-section. This paper focusses on a broader region, of which this scenario is just one part. In particular,
-we discuss the scenarios where the forward field can not fit in memory even after compression, where
-compression and Revolve would be used in conjunction. 
+This scenario has been discussed in different studies before - they look at Revolve as an alternative
+to compression. This approach was seen for a study of adjoint-based methods on the Navier-Stokes
+equation \cite{cyr2015towards}. This was also studied in the context of seismic imaging and FWI
+to develop tailored compression methods for the wavefield data that is typically seen in this context - 
+including a compression method based on DCT \cite{dalmau2014lossy} and one based on adaptive
+coarsening \cite{boehm2016wavefield}. This paper focusses on a broader region, of which this scenario
+is just one part. In particular, we discuss the scenarios where the forward field can not fit in memory even
+after compression, where compression and Revolve would be used in conjunction. 
 
 Although most of the compression we discuss here introduces some error which may or may not affect
 the final result of the computation, we try to avoid discussing the error in this paper and focus on the 
 performance impact of compression instead.
 
-\section{Related Work}
-\cite{cyr2015towards} studied compression for adjoint-based optimisation in the context of the Navier-Stokes
-equation, focussing on the scenario where the entire forward field could be stored in memory after
-compression. They looked at Revolve as an alternative to compression.
-
-\cite{dalmau2014lossy} also looked at compression as an alternative to Revolve, although in the same context
-as this paper - seismic imaging. Their implementation was, however, storing the compressed data to disk so a
-lot of their benefits came from more efficient utilization of the low disk bandwidth. Their focus was on developing
-and fine-tuning a domain-specific compression algorithm for seismic imaging which was based on discrete
-cosine transforms (DCT).
-
-\cite{fichtner2009full}
-
-\cite{gpu-compression}
-
-\cite{boehm2016wavefield}
-\cite{gpu-compression}
-\cite{Kaklamanis:2012aa}
-
-TODO cite SZ (Frank Cappello)
-TODO Jan check whether SZ supports 4D - it does support up to 4D. 
 \section{Test case using Devito and pyRevolve}
 We use Devito \cite{devito-compiler} \cite{devito-api} to setup wave equation solvers for forward and
 adjoint modes. Devito is a domain-specific language to enable the rapid development of finite-difference
@@ -225,16 +210,25 @@ solvers from a high-level description of the partial differential equation. The 
 equation is the acoustic:
 \begin{equation}
 m(x)\frac{\partial^2 u(t, x)}{\partial t^2} - \Laplace u(t, x) = q(t, x)
+\label{eqn:wave}
 \end{equation}
 where $m(x) = \frac{1}{c^2(x)}$ is the squared slowness with $c(x)$ the spatially dependent speed of sound, 
 $u(t, x)$ is the wavefield, $\Laplace u(t, x)$ denotes the laplacian of the wavefield and $q(t, x)$ is the source.
 Some of the kernels used in the performance measurements corresponded to a more physically representative
 but complex version of this equation called Tilted Transverse Isotropy (TTI) \cite{zhang2011stable}. We leave the 
-equation itself out of this paper for brevity. 
+TTI equations out of this paper for brevity. 
 
-TODO expand to include FWI objective function and explain that the gradient is computed using the adjoint-state method
+The solution to equation \ref{eqn:wave} form the forward problem. The complete optimization problem involves
+the minimization of the misfit between the simulated signal and the observed signal as follows:
 
-The values of $m(x)$ were derived from the SEAM Overthrust (TODO Cite SEAM) model which was over a grid
+\begin{equation}
+\min_{m} \phi_s(m) = \frac{1}{2} \left\lVert d_{sim} - d_{obs} \right\rVert_2^2
+\end{equation}
+
+This optimization problem is usually solved using gradient-descent methods and the gradient calculation is done
+using the adjoint-state method, which involves the data-flow pattern from figure \ref{fig:dataflow}.
+
+The values of $m(x)$ were derived from the SEAM Overthrust model \cite{aminzadeh1996three} which was over a grid
 of $287 \times 881 \times 881$ points, including an absorbing layer of 40 points on each side. The grid spacing
 was 25m in space and TODO in time. This was run for 2500 timesteps, and the final field stored as
 representative of a typical snapshot. Figure \ref{fig:uncompressed} shows this stored field that was used for the compression tests. 
@@ -247,8 +241,8 @@ representative of a typical snapshot. Figure \ref{fig:uncompressed} shows this s
 \label{fig:uncompressed}
 \end{figure}
 
-To implement Revolve with Devito, we used pyRevolve (TODO CITE 2 papers) which is a python wrapper over the
-original Revolve utility (TODO CITE Revolve). The performance model that will be developed in section TODO of
+To implement Revolve with Devito, we used pyRevolve \cite{kukreja2018high} which is a python wrapper over the
+original Revolve utility. The performance model that will be developed in section \ref{sec:performance_model} of
 this paper assumes that the implementation is similar to pyRevolve, which stores a checkpoint by copying a portion
 of the operator's working memory to the checkpointing memory and similarly loads a checkpoint by copying from the
 checkpointing memory to the operator's working memory. Although a perfect implementation of checkpointing may
@@ -279,8 +273,8 @@ in the open source community shortly.
 
 We tried all three modes of ZFP, namely fixed-tolerance, fixed-precision and fixed-rate modes. Figure TODO shows the compression ratios
 we saw for a variety of compression settings for the three modes. As expected, the highest compression efficiency was
-observed in the fixed-tolerance mode albeit with highly unpredictable compression ratios. Figure \ref{fig:decompressed} shows a sample
-wavefield that was recovered after compression and decompression using fixed-tolerance mode. Since, in our experiments, the time
+observed in the fixed-tolerance mode albeit with highly unpredictable compression ratios. Figure \ref{fig:decompressed_error} shows the
+spatial distribution of the error introduced after compression and decompression using fixed-tolerance mode. Since, in our experiments, the time
 taken to compress a checkpoint was in the same order of magnitude as the time taken to compute a timestep, we build a
 performance model in the next section to evaluate the utility of compression in different scenarios of problem setups and test
 platforms.
@@ -288,17 +282,18 @@ platforms.
 
 
 \section{Performance model for a combination of Revolve and compression}
+\label{sec:performance_model}
 We work with the assumption that the computation of a single forward time step takes the same wall time
 as the computation of a single reverse time step - calling this $\mathbf{C}$. If the size of a single 
 timestep in memory is $\mathbf{S}$ and the simulation involves $\mathbf{N}$ timesteps, the minimum
 wall time required to run a single forward-adjoint evaluation is given by:
 \begin{equation}
-T_N = 2 \times \mathbf{C} \times \mathbf{N}
+T_N = 2 \cdot \mathbf{C} \cdot \mathbf{N}
 \end{equation}
-However, this would require $\mathbf{S} \times \mathbf{N}$ memory. On a hardware platform where enough memory
+However, this would require $\mathbf{S} \cdot \mathbf{N}$ memory. On a hardware platform where enough memory
 is available, this would be the optimal strategy to compute the adjoint solution. 
 
-When the memory available on a system is less than $\mathbf{S} \times \mathbf{N}$, Revolve provides
+When the memory available on a system is less than $\mathbf{S} \cdot \mathbf{N}$, Revolve provides
 an optimal strategy to solve for the adjoint field by storing a subset of the $\mathbf{N}$ total checkpoints
 and recomputing the remaining ones. The overhead introduced by this method can be broken down into
 the recomputation overhead $\mathbf{O}_R$ and the storage overhead $\mathbf{O}_S$. The recomputation
@@ -327,7 +322,7 @@ the results copied back to the checkpointing memory. This copying is a common fe
 implementations, and might pose a non-trivial overhead in scenarios where the computation is heavily bandwidth-bound. 
 This storage overhead is given by:
 \begin{equation}
-\mathbf{O}_SR = \mathbf{N}_W \cdot \frac{\mathbf{S}}{\mathbf{B}} + \mathbf{N}_R \times \frac{\mathbf{S}}{\mathbf{B}}
+\mathbf{O}_{SR} = \mathbf{N}_W \cdot \frac{\mathbf{S}}{\mathbf{B}} + \mathbf{N}_R \cdot \frac{\mathbf{S}}{\mathbf{B}}
 \label{eqn:storage}
 \end{equation}
 where $\mathbf{N}_W$ is the total number of times Revolve writes checkpoints for a single run, $ \mathbf{N}_R$ 
@@ -335,7 +330,7 @@ is the number of times checkpoints are read, and $\mathbf{B}$ is the memory band
 
 The total time to solution in this scenario becomes:
 \begin{equation}
-T_R = 2 \times \mathbf{C} \times \mathbf{N} + \mathbf{O}_R(N, M) + \mathbf{O}_S
+T_R = 2 \cdot \mathbf{C} \cdot \mathbf{N} + \mathbf{O}_R(N, M) + \mathbf{O}_S
 \end{equation}
 
 Adding compression to the mix will increase the number of checkpoints available ($M$ in equation \ref{eqn:recompute}),
@@ -348,7 +343,7 @@ across the different time steps of the simulation, i.e. that we get the same com
 decompression time, no matter which of the $N$ possible checkpoints we try to compress/decompress. The storage overhead
 now becomes:
 \begin{equation}
-\mathbf{O}_SR = \mathbf{N}_W \times (\frac{\mathbf{S}}{\mathbf{F}\mathbf{B}} + t_c) + \mathbf{N}_R \times (\frac{\mathbf{S}}{\mathbf{F}\mathbf{B}} + t_d)
+\mathbf{O}_{SR} = \mathbf{N}_W \cdot (\frac{\mathbf{S}}{\mathbf{F}\mathbf{B}} + t_c) + \mathbf{N}_R \cdot (\frac{\mathbf{S}}{\mathbf{F}\mathbf{B}} + t_d)
 \end{equation}
 where $\mathbf{F}$ is the compression ratio (i.e. the ratio between the uncompressed and compressed checkpoint), and $t_c$
 and $t_d$ are compression and decompression times, respectively. At the same time, the recomputation overhead goes down
