@@ -68,7 +68,7 @@ n.kukreja@imperial.ac.uk}
 London, UK }
 \and
 \IEEEauthorblockN{Mathias Louboutin}
-\IEEEauthorblockA{\textit{TODO Mathias} \\
+\IEEEauthorblockA{\textit{School of Computational Science and Engineering} \\
 \textit{Georgia Institute of Technology}\\
 Atlanta, GA, USA\\}
 \and
@@ -78,11 +78,17 @@ Atlanta, GA, USA\\}
 Evanston, IL, USA \\
 }
 \and
-\IEEEauthorblockN{5\textsuperscript{th} Given Name Surname}
-\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
-\textit{name of organization (of Aff.)}\\
-City, Country \\
-email address}
+\IEEEauthorblockN{Fabio Luporini}
+\IEEEauthorblockA{\textit{Department of Earth Science and Engineering} \\
+\textit{Imperial College London}\\
+London, UK \\
+}
+\and
+\IEEEauthorblockN{Paul Hovland}
+\IEEEauthorblockA{\textit{Mathematics and Computer Science} \\
+\textit{Argonne National Laboratory}\\
+Lemont, IL, USA \\
+}
 \and
 \IEEEauthorblockN{Gerard Gorman}
 \IEEEauthorblockA{\textit{Department of Earth Science and Engineering}\\
@@ -321,7 +327,9 @@ platforms.
 \begin{center}
 \includegraphics[width=0.8\linewidth]{images/tolerance-cf-richter.pdf}
 \end{center}
-\caption{Compression ratios achieved on compressing the wavefield}
+\caption{Compression ratios achieved on compressing the wavefield. The
+highlighted point corresponds to the setting used for the other results here
+unless otherwise specified.}
 \label{fig:tolerance_cf_plot}
 \end{figure}
 
@@ -387,19 +395,88 @@ across the different time steps of the simulation, i.e. that we get the same com
 decompression time, no matter which of the $N$ possible checkpoints we try to compress/decompress. The storage overhead
 now becomes:
 \begin{equation}
-\mathbf{O}_{SR} = \mathbf{N}_W \cdot (\frac{\mathbf{S}}{\mathbf{F}\mathbf{B}} + t_c) + \mathbf{N}_R \cdot (\frac{\mathbf{S}}{\mathbf{F}\mathbf{B}} + t_d)
+\mathbf{O}_{SR} = \mathbf{N}_W \cdot (\frac{\mathbf{S}}{\mathbf{F}
+  \cdot \mathbf{B}} + t_c) + \mathbf{N}_R \cdot
+(\frac{\mathbf{S}}{\mathbf{F} \cdot \mathbf{B}} + t_d)
 \end{equation}
 where $\mathbf{F}$ is the compression ratio (i.e. the ratio between the uncompressed and compressed checkpoint), and $t_c$
 and $t_d$ are compression and decompression times, respectively. At the same time, the recomputation overhead goes down
 because $\mathbf{F}$ times more checkpoints are now available.
 
-
-TODO add figure here that shows memory on x-axis and speedup on y axis. Split into 3 regions. Region 1, 
-where Revolve+Compression makes sense, Region 2, where compression would probably not bring in enough benefit, 
-and region 3 where compression would enable the computation to be done without revolve. 
 \section{Results}
+Figure \ref{fig:varying_memory} shows the speedups predicted by the
+performance model for varying amount of available memory. A big
+shortcoming that was realised in ZFP was the lack of parallelization
+in the decompression functions. The ZFP manual talks about the
+difficulty in implementing a parallel mode decompressor. To estimate
+the benefit from parallel decompression, we scaled the serial
+decompression time by the same factor that we saw between the serial
+and parallel compressors on a given platform. We called this scaled
+decompression time, ``theoretical decompression time'' and show this
+on the plot with a dotted line. The
+right-most region of this plot has been the focus of many studies
+mentioned earlier in this paper. The extension to the regions with
+lower memory is new here and we see that the maximum benefit is gained
+in the most memory-constrained scenarios (region 1), while there is a
+region where Revolve-based recomputation alone would be more
+beneficial (region 2). As expected, compression alone (with no
+Revolve) dominates region 3. 
+\begin{figure}
+\begin{center}
+\includegraphics[width=\linewidth]{images/varying-memory.pdf}
+\end{center}
+\caption{The speedups predicted by the performance model for varying
+  memory. The baseline
+(1.0) is the performance of a Revolve-only implementation under the
+same conditions. The dotted curve represents the hypothetical speedup
+if ZFP supported parallel decompression. The two vertical lines at 20GB and 52GB clearly
+divide the plot into 3 regions. The left-most region, with less than
+20GB memory sees the maximum benefit from compression. The middle
+region, with memory between 20GB and 52GB, is better off using only
+Revolve and no compression. The right-most region, with memory greater
+than 52GB represents the scenario where the entire history of the
+wavefield can fit in memory post-compression. In this case compression
+eliminates the use of Revolve - hence the speedup. This is the region
+that has been well-studied in past work.}
+\label{fig:varying_memory}
+\end{figure}
 
+Figure \ref{fig:varying_compute} shows the speedups predicted by the
+performance model for kernels of different computational cost. Perhaps
+unsurprisingly, the benefit gained by compression drops rapidly if the
+time to compute a single timestep is less than the time to compress
+the computed data (since recomputing would be cheaper in that case). For
+increasing computational cost, the speedup from compression saturates
+at a bound. 
+\begin{figure}
+\begin{center}
+\includegraphics[width=\linewidth]{images/varying-compute.pdf}
+\end{center}
+\caption{The speedups predicted by the performance model for varying
+  compute cost. The baseline
+(1.0) is the performance of a Revolve-only implementation under the
+same conditions. The benefits of compression drop rapidly if the
+computational cost of the kernel that generated the data is much lower
+than the cost of compressing the data. For increasing computational
+costs, the benefits are bounded.}
+\label{fig:varying_compute}
+\end{figure}
 
+Figure \ref{fig:varying_nt} shows the speedups predicted for differing
+number of timesteps. It is interesting to note that there is a
+consistent increase in the speedup as the number of timesteps goes
+up. 
+\begin{figure}
+\begin{center}
+\includegraphics[width=\linewidth]{images/varying-nt.pdf}
+\end{center}
+\caption{The speedups predicted by the performance model for varying
+  number of timesteps to be reversed. The baseline
+(1.0) is the performance of a Revolve-only implementation under the
+same conditions. It can be seen that compression becomes more
+beneficial as the number of timesteps is increased.}
+\label{fig:varying_nt}
+\end{figure}
 \section{Conclusions and Future work}
 
 What are the problems?
@@ -420,9 +497,8 @@ Parallel decompression
 Disk checkpointing
 
 \section*{Acknowledgment}
-
-TODO (Acknowledgments for Navjot)
-
+This work was funded by the Intel Parallel Computing Centre at
+Imperial College London and EPSRC EP/R029423/1 . 
 This work was supported by the U.S. Department of Energy, Office of Science,
 Office of Advanced Scientific Computing Research, Applied Mathematics and
 Computer Science programs under contract number DE-AC02-06CH11357.
