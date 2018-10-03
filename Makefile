@@ -1,4 +1,4 @@
-all: stream.txt csvs runtime-ot2-32.txt runtime-ot4-32.txt runtime-ot4-32.txt
+all: stream.txt csvs runtime-ot2-32.txt runtime-ot4-32.txt runtime-tti-32.txt
 
 stream.txt: stream.o
 	./stream.o > stream.txt
@@ -14,7 +14,7 @@ uncompressed.h5: overthrust_3D_initial_model.h5 zfp-0.5.3/lib/libzfp.so simple.p
 runtime-ot4-32.txt: overthrust_3D_initial_model.h5 zfp-0.5.3/lib/libzfp.so simple.py
 	LD_LIBRARY_PATH=./zfp-0.5.3/lib DEVITO_OPENMP=1 python -u simple.py -so 32 -k OT4 > runtime-ot4-32.txt 2>&1
 
-runtime-ot4-32.txt: overthrust_3D_initial_model.h5 zfp-0.5.3/lib/libzfp.so simple.py
+runtime-tti-32.txt: overthrust_3D_initial_model.h5 zfp-0.5.3/lib/libzfp.so simple.py
 	LD_LIBRARY_PATH=./zfp-0.5.3/lib DEVITO_OPENMP=1 python -u simple.py -so 32 -k TTI > runtime-tti-32.txt 2>&1
 
 csvs: precision.csv tolerance.csv rate.csv precision-s.csv tolerance-s.csv rate-s.csv
