@@ -298,14 +298,16 @@ model to verify this assumption.
 
 \section{Compression algorithms}
 \subsection{Lossless}
-For our initial experiments, we used the python package \emph{blosc} \cite{blosc}. It includes implementations for
-6 different lossless compression algorithms, namely ZLIB, ZSTD, BLOSCLZ,
-LZ4, LZ4HC and Snappy. We did a parameter sweep over all available parameters to find the best-performing combinations. 
-The best compression ratio we saw in this study was 1.18x which wasn't very promising.
+We use the python package \emph{blosc}~\cite{blosc}, which includes implementations for
+six different lossless compression algorithms, namely ZLIB, ZSTD, BLOSCLZ,
+LZ4, LZ4HC and Snappy. An exhaustive search over all available parameters 
+resulted in a maximum compression ratio of 1.18x. We therefore focus on lossy
+compression in the remainder of this work.
+
 \subsection{Lossy}
-Next we tried lossy compression using ZFP \cite{lindstrom2014fixed}. To use ZFP from python, 
-we first wrote a python wrapper over the reference implementation of ZFP, which is in C. We plan to release this wrapper
-in the open source community shortly. 
+We use the lossy compression package ZFP~\cite{lindstrom2014fixed} developed in
+C. To use ZFP from python, we developed a python wrapper for the reference
+implementation of ZFP.
 
 \begin{figure}
 \begin{center}
@@ -315,13 +317,22 @@ in the open source community shortly.
 \label{fig:decompressed_error}
 \end{figure}
 
-We tried all three modes of ZFP, namely fixed-tolerance, fixed-precision and fixed-rate modes. Figure \ref{fig:tolerance_cf_plot}
-shows the compression ratios we saw for a variety of compression settings for the three modes. As expected, the highest compression efficiency was
-observed in the fixed-tolerance mode albeit with highly unpredictable compression ratios. Figure \ref{fig:decompressed_error} shows the
-spatial distribution of the error introduced after compression and decompression using fixed-tolerance mode. Since, in our experiments, the time
-taken to compress a checkpoint was in the same order of magnitude as the time taken to compute a timestep, we build a
-performance model in the next section to evaluate the utility of compression in different scenarios of problem setups and test
-platforms.
+ZFP supports three compression modes, namely fixed-tolerance, fixed-precision
+and fixed-rate. The fixed-tolerance mode limits the absolute error, while the
+fixed-precision mode limits the relative error to some user-specified value.
+The fixed-rate mode achieves a guaranteed compression ratio requested by the
+user, but does not provide any bounds on accuracy loss.
+Figure~\ref{fig:tolerance_cf_plot} shows compression ratios for a variety of
+settings for the three modes.
+
+The highest compression efficiency TODO define this is achieved in the
+fixed-tolerance mode albeit with highly unpredictable compression ratios. Figure
+\ref{fig:decompressed_error} shows the spatial distribution of the error after
+compression and decompression, compared to the original field, using
+fixed-tolerance mode.
+
+In our experiments using Devito, the time required to compress a checkpoint was
+in the same orderof magnitude as the time taken to compute a timestep.
 
 \begin{figure}
 \begin{center}
@@ -335,23 +346,24 @@ unless otherwise specified.}
 
 \section{Performance model for a combination of Revolve and compression}
 \label{sec:performance_model}
-We work with the assumption that the computation of a single forward time step takes the same wall time
-as the computation of a single reverse time step - calling this $\mathbf{C}$. If the size of a single 
-timestep in memory is $\mathbf{S}$ and the simulation involves $\mathbf{N}$ timesteps, the minimum
-wall time required to run a single forward-adjoint evaluation is given by:
+We assume that the computation of a single forward time step takes the same wall
+time as the computation of a single reverse time step. We denote this time as
+$\mathbf{C}$. For a simulation with $\mathbf{N}$ timesteps, the minimum wall time required
+for the full forward-adjoint evaluation is given by
 \begin{equation}
-T_N = 2 \cdot \mathbf{C} \cdot \mathbf{N}
+T_N = 2 \cdot \mathbf{C} \cdot \mathbf{N}.
 \end{equation}
-However, this would require $\mathbf{S} \cdot \mathbf{N}$ memory. On a hardware platform where enough memory
-is available, this would be the optimal strategy to compute the adjoint solution. 
+If the size of a single timestep in memory is given by $\mathbf{S}$, this
+requires a memory of at least size $\mathbf{S} \cdot \mathbf{N}$. If sufficient memory
+is available, no checkpointing or compression is needed.
 
-When the memory available on a system is less than $\mathbf{S} \cdot \mathbf{N}$, Revolve provides
-an optimal strategy to solve for the adjoint field by storing a subset of the $\mathbf{N}$ total checkpoints
+If the memory is smaller than $\mathbf{S} \cdot \mathbf{N}$, Revolve provides
+a strategy to solve for the adjoint field by storing a subset of the $\mathbf{N}$ total checkpoints
 and recomputing the remaining ones. The overhead introduced by this method can be broken down into
 the recomputation overhead $\mathbf{O}_R$ and the storage overhead $\mathbf{O}_S$. The recomputation
-overhead is simply the amount of time spent in recomputation, given by:
+overhead is the amount of time spent in recomputation, given by
 \begin{equation}
-\mathbf{O}_R(N, M) = p(N, M) \cdot \mathbf{C}
+\mathbf{O}_R(N, M) = p(N, M) \cdot \mathbf{C},
 \end{equation}
 where $p(N, M)$ is the minimum number of recomputed steps from \cite{griewank2000algorithm}, reproduced
 here in equation \ref{eqn:recompute}.
@@ -364,43 +376,50 @@ p(N, M) = \begin{cases}
     \label{eqn:recompute}
 \end{equation}
 \end{figure*}
-In equation \ref{eqn:recompute}, M is the number of checkpoints that can be stored in memory. Note that for $M >=N$, $\mathbf{O}_R$
-would be zero. For $M < N$, $\mathbf{O}_R$ goes up rather quickly as M is reduced in relation to N. 
+In equation \ref{eqn:recompute}, M is the number of checkpoints that can be
+stored in memory. Note that for $M >=N$, $\mathbf{O}_R$ would be zero. For $M <
+N$, $\mathbf{O}_R$ grows rapidly as M is reduced relative to N. 
 
-In a perfect implementation, the storage overhead $\mathbf{O}_S$ might be zero, since the computation could
+In an ideal implementation, the storage overhead $\mathbf{O}_S$ might be zero, since the computation could
 be done "in-place", but in practice, checkpoints are generally stored in a separate section of memory and they
 need to be transferred to a "computational" section of the memory where the compute is performed, and then
 the results copied back to the checkpointing memory. This copying is a common feature of checkpointing
 implementations, and might pose a non-trivial overhead in scenarios where the computation is heavily bandwidth-bound. 
-This storage overhead is given by:
+This storage overhead is given by
 \begin{equation}
-\mathbf{O}_{SR} = \mathbf{N}_W \cdot \frac{\mathbf{S}}{\mathbf{B}} + \mathbf{N}_R \cdot \frac{\mathbf{S}}{\mathbf{B}}
+\mathbf{O}_{SR} = \mathbf{N}_W \cdot \frac{\mathbf{S}}{\mathbf{B}} +
+\mathbf{N}_R \cdot \frac{\mathbf{S}}{\mathbf{B}}.
 \label{eqn:storage}
 \end{equation}
 where $\mathbf{N}_W$ is the total number of times Revolve writes checkpoints for a single run, $ \mathbf{N}_R$ 
 is the number of times checkpoints are read, and $\mathbf{B}$ is the memory bandwidth of the target system. 
 
-The total time to solution in this scenario becomes:
+The total time to solution in this scenario becomes
 \begin{equation}
-T_R = 2 \cdot \mathbf{C} \cdot \mathbf{N} + \mathbf{O}_R(N, M) + \mathbf{O}_S
+T_R = 2 \cdot \mathbf{C} \cdot \mathbf{N} + \mathbf{O}_R(N, M) + \mathbf{O}_S.
 \end{equation}
 
-Adding compression to the mix will increase the number of checkpoints available ($M$ in equation \ref{eqn:recompute}),
-hence reducing $\mathbf{O}_R$ while adding overheads related to compression and decompression in $\mathbf{O}_S$,
-as well as some error introduced by the compression. Assuming that the error remains within the allowed tolerance,
-we hypothesize that, at least for some circumstances, the reduction in $\mathbf{O}_R$ should offset the increase in 
-$\mathbf{O}_S$, i.e. lead to an overall decrease in the total time to solution ($T$). To build a performance model that
-enables us to find the regions where compression pays off, we assume that the compression algorithm behaves uniformly
+By using compression, the size of each checkpoint is reduced and therefore the
+number of checkpoints available is increased ($M$ in equation
+\ref{eqn:recompute}). This reduces the recomputation overhead $\mathbf{O}_R$,
+while at the same time adding overheads related to compression and decompression
+in $\mathbf{O}_S$.
+To be beneficial, the reduction in $\mathbf{O}_R$ must offset the increase in 
+$\mathbf{O}_S$, leading to an overall decrease in the time to solution $T$.
+
+Our performance model assumes
+ that the compression algorithm behaves uniformly
 across the different time steps of the simulation, i.e. that we get the same compression ratio, compression time and 
 decompression time, no matter which of the $N$ possible checkpoints we try to compress/decompress. The storage overhead
-now becomes:
+now becomes
 \begin{equation}
 \mathbf{O}_{SR} = \mathbf{N}_W \cdot (\frac{\mathbf{S}}{\mathbf{F}
   \cdot \mathbf{B}} + t_c) + \mathbf{N}_R \cdot
 (\frac{\mathbf{S}}{\mathbf{F} \cdot \mathbf{B}} + t_d)
 \end{equation}
 where $\mathbf{F}$ is the compression ratio (i.e. the ratio between the uncompressed and compressed checkpoint), and $t_c$
-and $t_d$ are compression and decompression times, respectively. At the same time, the recomputation overhead goes down
+and $t_d$ are compression and decompression times, respectively. At the same
+time, the recomputation overhead decreases
 because $\mathbf{F}$ times more checkpoints are now available.
 
 \section{Results}
