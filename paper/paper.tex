@@ -175,9 +175,15 @@ the final result of the computation, we try to avoid discussing the error in thi
 performance impact of compression instead.
 
 \section{Related Work}
-\cite{cyr2015towards}
+\cite{cyr2015towards} studied compression for adjoint-based optimisation in the context of the Navier-Stokes
+equation, focussing on the scenario where the entire forward field could be stored in memory after
+compression. They looked at Revolve as an alternative to compression.
 
-\cite{dalmau2014lossy}
+\cite{dalmau2014lossy} also looked at compression as an alternative to Revolve, although in the same context
+as this paper - seismic imaging. Their implementation was, however, storing the compressed data to disk so a
+lot of their benefits came from more efficient utilization of the low disk bandwidth. Their focus was on developing
+and fine-tuning a domain-specific compression algorithm for seismic imaging which was based on discrete
+cosine transforms (DCT).
 
 \cite{fichtner2009full}
 
@@ -188,7 +194,7 @@ performance impact of compression instead.
 \cite{Kaklamanis:2012aa}
 
 TODO cite SZ (Frank Cappello)
-TODO Jan check whether SZ supports 4D
+TODO Jan check whether SZ supports 4D - it does support up to 4D. 
 \section{Test case using Devito and pyRevolve}
 We use Devito \cite{devito-compiler} \cite{devito-api} to setup wave equation solvers for forward and
 adjoint modes. Devito is a domain-specific language to enable the rapid development of finite-difference
@@ -203,14 +209,16 @@ Some of the kernels used in the performance measurements corresponded to a more 
 but complex version of this equation called Tilted Transverse Isotropy (TTI) \cite{zhang2011stable}. We leave the 
 equation itself out of this paper for brevity. 
 
+TODO expand to include FWI objective function and explain that the gradient is computed using the adjoint-state method
+
 The values of $m(x)$ were derived from the SEAM Overthrust (TODO Cite SEAM) model which was over a grid
 of $287 \times 881 \times 881$ points, including an absorbing layer of 40 points on each side. The grid spacing
-was TODO in space and TODO in time. This was run for TODO timesteps, and the final field stored as
+was 25m in space and TODO in time. This was run for 2500 timesteps, and the final field stored as
 representative of a typical snapshot. Figure \ref{fig:uncompressed} shows this stored field that was used for the compression tests. 
 
 \begin{figure}
 \begin{center}
-\includegraphics[width=0.8\linewidth]{images/uncompressed.png}
+\includegraphics[width=0.8\linewidth]{images/uncompressed.pdf}
 \end{center}
 \caption{Cross-section of the wavefield used as a reference sample for compression and decompression}
 \label{fig:uncompressed}
@@ -240,10 +248,10 @@ in the open source community shortly.
 
 \begin{figure}
 \begin{center}
-\includegraphics[width=0.8\linewidth]{images/decompressed-t-8.png}
+\includegraphics[width=0.8\linewidth]{images/errors.pdf}
 \end{center}
-\caption{Cross-section of the wavefield recovered after compression and decompression using the fixed-tolerance mode}
-\label{fig:decompressed}
+\caption{Cross-section of the field that shows errors introduced during compression and decompression using the fixed-tolerance mode}
+\label{fig:decompressed_error}
 \end{figure}
 
 We tried all three modes of ZFP, namely fixed-tolerance, fixed-precision and fixed-rate modes. Figure TODO shows the compression ratios
