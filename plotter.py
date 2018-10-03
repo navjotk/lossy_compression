@@ -7,7 +7,7 @@ import csv
 
 def read_csv_file(filename):
     with open(filename, mode='r') as csv_file:
-        csv_reader = csv.reader(csv_file, delimiter=',')
+        csv_reader = csv.reader(csv_file, delimiter=',', quotechar='"')
         headings = []
         data = []
         for i, row in enumerate(csv_reader):
@@ -19,8 +19,8 @@ def read_csv_file(filename):
     return data, headings
         
 
-def plot(x, y, filename, title, xlabel, ylabel):
-    plt.plot(x, y)
+def plot(x, y, filename, title, xlabel, ylabel, highlight=None):
+    plt.plot(x, y, marker='.')
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.title(title)
