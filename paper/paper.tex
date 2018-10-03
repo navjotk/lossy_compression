@@ -214,14 +214,15 @@ problems, or for problems where the required accuracy limits the achievable
 compression ratios.
 
 Compared to using only checkpointing without compression, our combined method
-can often achieve better performance. This is achieved by reducing the size of
-stored program states, thereby allowing more program states to be stored during
-the forward computation. This in turn reduces the amount of recomputations that
-needs to be performed during the adjoint computation. On the other hand, the
-compression and decompression itself takes time.  We thereforen provide a
-comprehensive performance model that predicts whether or not the combined method
-is beneficial. We present various scenarios that use a TODO describe Richter and
-TODO describe JLSE/SKX node system, error tolerances for the lossy ZFP
+often improves performance. This is a consequence of the reduced size of stored
+program states, allowing more program states to be stored during the forward
+computation. This in turn reduces the amount of recomputation that needs to be
+performed. On the other hand, the compression and decompression itself takes
+time. We thereforen provide a comprehensive performance model that predicts
+whether the combined method is beneficial, that is, whether the time spent
+compressing and decompressing is less than the time saved by reduced
+recomputations. We present various scenarios that use a TODO describe Richter
+and TODO describe JLSE/SKX node system, error tolerances for the lossy ZFP
 compression algorithm ranging from TODO to TODO, and different types of forward
 and adjoint computations that vary in their ratio between compute cost and state
 size. 
