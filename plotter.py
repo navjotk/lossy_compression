@@ -26,6 +26,7 @@ def plot(x, y, filename, title, xlabel, ylabel):
     plt.title(title)
     plt.xticks(rotation=90)
     plt.xscale('log')
+    plt.yscale('log')
     plt.savefig(filename, bbox_inches='tight')
 
 if __name__ == "__main__":

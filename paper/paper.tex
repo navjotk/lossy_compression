@@ -163,7 +163,7 @@ Zlib (which is a part of gzip) \cite{deutsch1996zlib}, and compression for video
 data such as JPEG-2000 \cite{skodras2001jpeg}have been used for scientific data. More
 recently, special purpose compression algorithms for floating-point scientific data have been
 developed, such as ZFP or SZ \cite{lindstrom2014fixed} \cite{di2018efficient} 
-\cite{Kaklamanis:2012aa}.
+\cite{Kaklamanis:2012aa} \cite{ratanaworabhan2006fast}.
 
 Lossless algorithms guarantee that the exact original data can be
 recovered during decompression, whereas lossy algorithms introduce an error, but
@@ -230,8 +230,9 @@ using the adjoint-state method, which involves the data-flow pattern from figure
 
 The values of $m(x)$ were derived from the SEAM Overthrust model \cite{aminzadeh1996three} which was over a grid
 of $287 \times 881 \times 881$ points, including an absorbing layer of 40 points on each side. The grid spacing
-was 25m in space and TODO in time. This was run for 2500 timesteps, and the final field stored as
+was 25m. This was run for 2500 timesteps, and the final field stored as
 representative of a typical snapshot. Figure \ref{fig:uncompressed} shows this stored field that was used for the compression tests. 
+The uncompressed size of this field was just under 900MB per timestep.
 
 \begin{figure}
 \begin{center}
@@ -255,11 +256,12 @@ TODO description of skylake, henceforth called Skylake.
 
 \section{Compression algorithms}
 \subsection{Lossless}
-For our initial experiments, we used the python package \emph{blosc} (TODO CITE). It includes implementations for
-6 different lossless compression algorithms, namely ZLIB, ZSTD, BLOSC, LZ4, LZ4HC and TODO (TODO cite all of them).
-We did a parameter sweep over all available parameters to find the best-performing combinations. 
+For our initial experiments, we used the python package \emph{blosc} \cite{blosc}. It includes implementations for
+6 different lossless compression algorithms, namely ZLIB, ZSTD, BLOSCLZ,
+LZ4, LZ4HC and Snappy. We did a parameter sweep over all available parameters to find the best-performing combinations. 
+The best compression ratio we saw in this study was 1.18x which wasn't very promising.
 \subsection{Lossy}
-Next we tried lossy compression using ZFP \cite{ratanaworabhan2006fast} (TODO verify citation). To use ZFP from python, 
+Next we tried lossy compression using ZFP \cite{lindstrom2014fixed}. To use ZFP from python, 
 we first wrote a python wrapper over the reference implementation of ZFP, which is in C. We plan to release this wrapper
 in the open source community shortly. 
 
@@ -271,15 +273,21 @@ in the open source community shortly.
 \label{fig:decompressed_error}
 \end{figure}
 
-We tried all three modes of ZFP, namely fixed-tolerance, fixed-precision and fixed-rate modes. Figure TODO shows the compression ratios
-we saw for a variety of compression settings for the three modes. As expected, the highest compression efficiency was
+We tried all three modes of ZFP, namely fixed-tolerance, fixed-precision and fixed-rate modes. Figure \ref{fig:tolerance_cf_plot}
+shows the compression ratios we saw for a variety of compression settings for the three modes. As expected, the highest compression efficiency was
 observed in the fixed-tolerance mode albeit with highly unpredictable compression ratios. Figure \ref{fig:decompressed_error} shows the
 spatial distribution of the error introduced after compression and decompression using fixed-tolerance mode. Since, in our experiments, the time
 taken to compress a checkpoint was in the same order of magnitude as the time taken to compute a timestep, we build a
 performance model in the next section to evaluate the utility of compression in different scenarios of problem setups and test
 platforms.
 
-
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.8\linewidth]{images/tolerance-cf-richter.pdf}
+\end{center}
+\caption{Compression ratios achieved on compressing the wavefield}
+\label{fig:tolerance_cf_plot}
+\end{figure}
 
 \section{Performance model for a combination of Revolve and compression}
 \label{sec:performance_model}
@@ -301,7 +309,7 @@ overhead is simply the amount of time spent in recomputation, given by:
 \begin{equation}
 \mathbf{O}_R(N, M) = p(N, M) \cdot \mathbf{C}
 \end{equation}
-where $p(N, M)$ is the minimum number of recomputed steps from TODO cite revolve, reproduced
+where $p(N, M)$ is the minimum number of recomputed steps from \cite{griewank2000algorithm}, reproduced
 here in equation \ref{eqn:recompute}.
 \begin{figure*}
 \begin{equation}
