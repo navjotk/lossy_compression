@@ -208,10 +208,10 @@ method specifically designed for
 wavefields~\cite{dalmau2014lossy,boehm2016wavefield}.
 
 In this paper, we extend the previous studies by \emph{combining} checkpointing
-and compression. An obvious use case would be one where the data does not fit
-in the available memory even after compression. This could happen either for
-very large adjoint problems, or for problems where the required accuracy limits
-the achievable compression ratios.
+and compression. This is obviously useful when the data does not fit in the
+available memory even after compression, for example for very large adjoint
+problems, or for problems where the required accuracy limits the achievable
+compression ratios.
 
 Compared to using only checkpointing without compression, our combined method
 can often achieve better performance. This is achieved by reducing the size of
