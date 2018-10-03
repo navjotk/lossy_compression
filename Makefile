@@ -9,7 +9,7 @@ stream.o: stream.c
 runtime.txt: uncompressed.h5
 
 uncompressed.h5: overthrust_3D_initial_model.h5 zfp-0.5.3/lib/libzfp.so simple.py
-	LD_LIBRARY_PATH=./zfp-0.5.3/lib DEVITO_OPENMP=1 python -u simple.py -so 32> runtime-ot2-32.txt 2>&1
+	LD_LIBRARY_PATH=./zfp-0.5.3/lib DEVITO_OPENMP=1 python -u simple.py -so 32 > runtime-ot2-32.txt 2>&1
 
 runtime-ot4-32.txt: overthrust_3D_initial_model.h5 zfp-0.5.3/lib/libzfp.so simple.py
 	LD_LIBRARY_PATH=./zfp-0.5.3/lib DEVITO_OPENMP=1 python -u simple.py -so 32 -k OT4 > runtime-ot4-32.txt 2>&1
