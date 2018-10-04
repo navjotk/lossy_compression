@@ -54,8 +54,7 @@
 \newcommand*\Laplace{\mathop{}\!\mathbin\bigtriangleup}
 \begin{document}
 
-\title{Combining checkpointing and data compression\\ for high frequency seismic imaging
-}
+\title{Combining checkpointing and data compression\\ for large scale seismic inversion}
 
 \author{\IEEEauthorblockN{Navjot Kukreja}
 \IEEEauthorblockA{\textit{Department of Earth Science and Engineering} \\
@@ -100,8 +99,7 @@ London, UK }
 \maketitle
 
 \begin{abstract}
-Full-waveform inversion is an adjoint-based optimization problem in seismic
-imaging that processes terabytes of data, regularly exceeding the memory
+Seismic inversion and imaging are adjoint-based optimization problems that processes up to terabytes of data, regularly exceeding the memory
 capacity of available computers. Data compression is an effective strategy to
 reduce this memory requirement by a certain factor, particularly if some loss in
 accuracy is acceptable. A popular alternative is checkpointing, where data is
@@ -110,7 +108,7 @@ needed from the last stored state.  This allows arbitrarily large adjoint
 computations with limited memory, at the cost of additional recomputations.
 
 In this paper we combine compression and checkpointing for the first
-time to compute a realistic full-waveform inversion. The combination of
+time to compute a realistic seismic inversion. The combination of
 checkpointing and compression allows
 larger adjoint computations compared to using only compression, and
 reduces the recomputation overhead significantly compared to using only checkpointing.
@@ -126,50 +124,38 @@ run forward in simulation time, producing data that is used in reverse order by
 a subsequent adjoint computation that is run backwards in simulation time.
 Figure~\ref{fig:dataflow} shows the resulting data flow. Many important
 applications in science and engineering have this structure, including
-full-waveform inversion (FWI).
+seismic inversion.
 
-In FWI, the propagation of seismic waves through the earth's subsurface is
-simulated and compared with data from real-world measurements. The model of the
-subsurface is iteratively improved by minimizing the misfit between simulation and
-measurement in an adjoint optimization problem.
-Figure~\ref{fig:offshore_survey} shows the setup of the real-world experiment that
-produces the measurement data~\cite{plessix2006review}. Storing all intermediate
+In seismic inversion, the propagation of seismic waves through the earth's subsurface is simulated and compared with data from field measurements. The model of the subsurface is iteratively improved by minimizing the misfit between simulated data and field measurement in an adjoint optimization problem.
+Figure~\ref{fig:offshore_survey} shows the setup of the field experiment that produces the measured data~\cite{plessix2006review}. Storing all intermediate
 results as required for the data flow shown in Figure~\ref{fig:dataflow} is not
 feasible, since this would require tens of terabytes of memory, which is not
 commonly available on the machines used to solve these problems. To solve this
 problem, a number of strategies are used that are discussed in the following
-paragraphs. While this paper uses FWI as a test case, most of these ideas,
-including the one presented in this work, are also applicable to other adjoint
-optimization problems.
+paragraphs. While this paper uses seismic inversion as a test case, most of these ideas, including the one presented in this work, are also applicable to other adjoint optimization problems.
 
 \begin{figure}
 \begin{center}
 \includegraphics[width=0.8\linewidth]{images/survey-ship-diagram.png}
 \end{center}
-\caption{Illustration of an offshore seismic survey that collects the input data for FWI}
+\caption{Illustration of an offshore seismic survey that collects the input data for seismic inversion}
 \label{fig:offshore_survey}
 \end{figure}
 
 Domain decomposition is often used not only to distribute the computational
-workload across more processors, but also to utilise the large amount of memory
+workload across more processors, but also to utilize the large amount of memory
 available in distributed systems. While this strategy is very powerful, the
 number of compute nodes and therefore the amount of memory that can be used
 efficiently is limited, for example by communication overheads that start to
-dominate as the domain is split into increasingly small
-pieces~\cite{virieux2009seismic}.
-Another common strategy in FWI is to only store values at the boundaries of the
-domain at each timestep, and reconstruct the rest of the wavefield when
-required~\cite{clapp2009reverse,yang2014rtm}.
+dominate as the domain is split into increasingly small pieces~\cite{virieux2009seismic}. Secondly, this method is broadly used on conventional clusters but can be drastically more complicated to seup and slower due to the communication in the Cloud.
+Another common strategy in seismic inversion is to only store values at the boundaries of the domain at each timestep, and reconstruct the rest of the wavefield when required~\cite{clapp2009reverse,yang2014rtm} with time reversal of the wave equation. However, this method is not applicable for wave equations that are not time reversible when for example physical attenuation is included.
 
 Checkpointing is yet another strategy to reduce the memory overhead. Only a
 subset of the program states during the forward pass is stored (and the rest
-discarded).  The discarded data is recomputed when needed by restarting the
+discarded). The discarded data is recomputed when needed by restarting the
 forward pass from the last available stored state. The question which states
 should be stored and which states should be recomputed to minimize the total
-amount of recomputation work has been answerd under certain assumptions with the
-Revolve algorithm~\cite{griewank2000algorithm}.  Other authors have subsequently
-developed extensions to Revolve that are optimal under less restrictive
-assumptions~\cite{wang2009minimal,aupy2016optimal,schanen2016asynchronous}.
+amount of recomputation work has been answered under certain assumptions with the Revolve algorithm~\cite{griewank2000algorithm}.  Other authors have subsequently developed extensions to Revolve that are optimal under less restrictive assumptions~\cite{wang2009minimal,aupy2016optimal,schanen2016asynchronous}.
 
 \begin{figure*}
 \begin{center}
@@ -194,7 +180,7 @@ guarantee that the error does not exceed certain absolute or relative error
 metrics. Typically, lossy compression is more effective in reducing the data
 size. Most popular compression packages offer various settings that allow a
 tradeoff between compression ratio, accuracy, and compression and decompression
-time. In this work we use the ZFP package to perform lossy compresssion.
+time. In this work we use the ZFP package to perform lossy compression.
 
 It is worth noting that another data reduction strategy is to typecast values
 into a lower precision format, for example, from double precision to single
@@ -207,12 +193,7 @@ compression and decompression time can be less than the time saved from the
 reduction in data that needs to be communicated across MPI nodes or between a
 GPU and a host computer~\cite{gpu-compression}.
 
-Another way of using compression to speed up FWI or other adjoint-based methods
-is to use it \emph{instead} of checkpointing. If the compression ratio is
-sufficient to fit the entire data in memory, checkpointing is no longer
-necessary. Previous work has discussed this situation in the context of
-computational fluid dynamics~\cite{cyr2015towards} and FWI using compression
-method specifically designed for
+Another way of using compression to speed up seismic inversion or other adjoint-based methods is to use it \emph{instead} of checkpointing. If the compression ratio is sufficient to fit the entire data in memory, checkpointing is no longer necessary. Previous work has discussed this situation in the context of computational fluid dynamics~\cite{cyr2015towards} and seismic inversion using compression method specifically designed for
 wavefields~\cite{dalmau2014lossy,boehm2016wavefield}.
 
 In this paper, we extend the previous studies by \emph{combining} checkpointing
@@ -221,14 +202,7 @@ available memory even after compression, for example for very large adjoint
 problems, or for problems where the required accuracy limits the achievable
 compression ratios.
 
-Compared to using only checkpointing without compression, our combined method
-often improves performance. This is a consequence of the reduced size of stored
-program states, allowing more program states to be stored during the forward
-computation. This in turn reduces the amount of recomputation that needs to be
-performed. On the other hand, the compression and decompression itself takes
-time. We thereforen provide a comprehensive performance model that predicts
-whether the combined method is beneficial, that is, whether the time spent
-compressing and decompressing is less than the time saved by reduced
+Compared to the use of only checkpointing without compression, our combined method often improves performance. This is a consequence of the reduced size of stored program states, allowing more program states to be stored during the forward computation. This in turn reduces the amount of recomputation that needs to be performed. On the other hand, the compression and decompression itself takes time. We therefore provide a comprehensive performance model that predicts whether the combined method is beneficial, that is, whether the time spent compressing and decompressing is less than the time saved by reduced
 recomputations.
 
 We present test cases that use a TODO describe Richter
@@ -245,35 +219,34 @@ other algorithms might achieve a better accuracy/compression tradeoff.
 
 \section{Test case using Devito and pyRevolve}
 We use Devito~\cite{devito-api,devito-compiler} to solve forward and adjoint
-wave equation problems. Devito is a domain-specific language to enable the
+wave equation problems. Devito is a domain-specific language that enables the
 rapid development of finite-difference solvers from a high-level description
-of a partial differential equation. The simplest version of the wave
-equation is the acoustic wave equation given by
+of partial differential equations. The simplest version of the seismic wave
+equation is the acoustic isotropic wave equation defined as:
 \begin{equation}
 m(x)\frac{\partial^2 u(t, x)}{\partial t^2} - \Laplace u(t, x) = q(t, x),
 \label{eqn:wave}
 \end{equation}
 where $m(x) = \frac{1}{c^2(x)}$ is the squared slowness, $c(x)$ the spatially
-dependent speed of sound, $u(t, x)$ is the wavefield, $\Laplace u(t, x)$
-denotes the laplacian of the wavefield and $q(t, x)$ is a source term.
+dependent speed of sound, $u(t, x)$ is the pressure wavefield, $\Laplace u(t, x)$ denotes the laplacian of the wavefield and $q(t, x)$ is a source term.
 Some of our experiments in Section TODO are performed using a more accurate
 and more complex version of this equation called Tilted Transverse Isotropy
-(TTI)~\cite{zhang2011stable}. We leave the TTI equations out of this paper
+(TTI)~\cite{zhang2011stable} that takes into account the anisotopic propagation of waves in the earth subsurface (directional dependency of the speed of sound). We leave the TTI equations out of this paper
 for brevity. 
 
-The solution to equation~\ref{eqn:wave} forms the forward problem. The adjoint
-problem minimizes the misfit between simulated and observed signal given by
+The solution to equation~\ref{eqn:wave} forms the forward problem. The seismic inversion problem minimizes the misfit between simulated and observed signal given by:
 \begin{equation}
 \min_{m} \phi_s(m) = \frac{1}{2} \left\lVert d_{sim} - d_{obs} \right\rVert_2^2.
 \end{equation}
-This optimization problem is usually solved using gradient-descent methods,
-where the gradient is computed using the adjoint-state method, which involves
+
+This optimization problem is usually solved using gradient based methods such as steepest descent,
+where the gradient is computed using the adjoint-state method that involves
 the data-flow pattern from figure \ref{fig:dataflow}.
 
-The values of $m(x)$ used in this work are derived from the SEAM Overthrust
+The values of $m(x)$ used in this work are derived from the Overthrust
 model~\cite{aminzadeh1996three} over a grid of $287 \times 881 \times 881$
 points, including an absorbing layer of 40 points on each side. The grid spacing
-is 25m in space. This is run for 2500 timesteps. The wave field
+is $25m$ in space. The propagation time is $4sec$ that corresponds to 2500 timesteps. The wave field
 at the final time is shown in Figure~\ref{fig:uncompressed}, and only this field
 was used for the compression experiments in this paper. The uncompressed size of
 this single time step field is just under 900MB.
@@ -284,9 +257,9 @@ this single time step field is just under 900MB.
 \end{center}
 \caption{Cross-section of the wavefield used as a reference sample for
   compression and decompression. This field was formed after a Ricker
-  wavelet source was placed at TODO and the wave propagated for 2500
-  timesteps. This is a vertical cross-section of a 3D field, taken at
-  the source location}
+  wavelet source was placed at the surface of the model and the wave propagated for 2500
+  timesteps. This is a vertical (x-z) cross-section of a 3D field, taken at
+  the $y$ source location}
 \label{fig:uncompressed}
 \end{figure}
 
@@ -517,13 +490,13 @@ beneficial as the number of timesteps is increased.}
 What are the problems?
 The performance we developed might be useful in judging whether compression
 would be helpful in a particular scenario without actually building a
-complete implementation first. We have tried to keep it application
+complete implementation first. We have tried to keep the algorithm application
 and platform agnostic in order to maximize its applicability. However
 there are a few limitations in this model. Firstly, we assumed that
 the compression performance we saw for a single checkpoint is
 representative of any checkpoint throughout the simulation. This
 assumption might have been completely wrong if made about a checkpoint
-in the first few time steps since we consistently saw upto 800x
+in the first few time steps since we consistently saw up to 800x
 compression in those cases - since they are mostly zeros. In order for
 this assumption to be realistic, we use a checkpoint close to the end
 of the simulation so that most of the field is perturbed and hence is
