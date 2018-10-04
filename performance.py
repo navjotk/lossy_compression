@@ -5,6 +5,8 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 import csv
+from matplotlib import ticker
+
 
 
 class CounterOperator(Operator):
@@ -85,6 +87,8 @@ class Problem(object):
 
     def revolve(self, peak_memory):
         ncp = math.floor(peak_memory/self.size_ts)
+        if ncp >= self.nt:
+            ncp = self.nt
         advances, takeshots, useshots = revolve_factors(self.nt, ncp)
         assert(advances >= self.nt)
         time_fw = self.compute_ts * advances
@@ -97,7 +101,7 @@ class Problem(object):
         ncp = math.floor(peak_memory/compressed_size)
 
         if ncp >= self.nt:
-            return self.compression_only(c_time, d_time)
+            ncp = self.nt
         
         # If we're here, we can't fit the whole history in memory even after compression
         advances, takeshots, useshots = revolve_factors(self.nt, ncp)
@@ -121,13 +125,16 @@ class Problem(object):
 def linspace(lower, upper, length):
     return [lower + x*(upper-lower)/length for x in range(length)]
 
+def logspace(lower, upper, length, base=10):
+    return np.logspace(math.log(lower, base), math.log(upper, base), base=base, num=length)
+
 
 def platform_name():
     global platform
     return platform
 
 def plot(x, y, filename, title, xlabel, ylabel, hline=None, more_y=None, more_y_labels=None,
-         fixed=None, xscale=None, yscale=None, vlines=None, textloc=None):
+         fixed=None, xscale=None, yscale=None, vlines=None, textloc=None, basex=None):
     plt.gcf().clear()
     if more_y_labels is not None:
         # We need labels for every series in more_y and one for the main series
@@ -151,7 +158,7 @@ def plot(x, y, filename, title, xlabel, ylabel, hline=None, more_y=None, more_y_
                 label = None
             plt.plot(x, series, linestyle='dotted', label=label)
         if more_y_labels is not None:
-            plt.legend()
+            plt.legend(loc=9)
     
     if fixed is not None:
         fixed.update({"Platform" : platform_name()})
@@ -161,14 +168,18 @@ def plot(x, y, filename, title, xlabel, ylabel, hline=None, more_y=None, more_y_
         plt.figtext(textloc[0], textloc[1], fixed_params, size=8)
     plt.title(title)
     if xscale is not None:
-        plt.xscale(xscale)
+        if basex is not None:
+            plt.xscale(xscale, basex=basex)
+        else:
+            plt.xscale(xscale)
 
     if yscale is not None:
         plt.yscale(yscale)
     if vlines is not None:
         for v in vlines:
             plt.axvline(v, linestyle='-.', color='green')
-            plt.text(v + 100,2.25,str(v),rotation=90)
+            plt.text(v*1.1,4,"%.2f"%v,rotation=90)
+
     plt.savefig(filename, bbox_inches='tight')
 
 
@@ -204,24 +215,53 @@ def varying_peak_memory(nt, size_ts, compute_ts, bw, c_factor, c_time, d_time,
                         theoretical_d_time):
     p = Problem(nt, size_ts, compute_ts, bw)
     min_time, overall_peak_mem = p.naive_strategy()
-    mems = linspace(4*size_ts, overall_peak_mem, 200)
+    mems = logspace(4*size_ts, 2*overall_peak_mem, 40)
     speedups = [p.compression_speedup(x, c_factor, c_time, d_time) for x in mems]
-    theoretical_speedup = [p.compression_speedup(x, c_factor, c_time, theoretical_d_time) for x in mems]
+    #theoretical_speedup = [p.compression_speedup(x, c_factor, c_time, theoretical_d_time) for x in mems]
+    computes = [0.25, 0.83, 2.0, 8.0]
+
+    more_computes = []
+    for c in computes:
+        p = Problem(nt, size_ts, c*(c_time + d_time), bw)
+        speedup = [p.compression_speedup(x, c_factor, c_time, d_time) for x in mems]
+        more_computes.append(speedup)
+    
     fixed = {'Timesteps': nt, 'Size of checkpoint (MB)': size_ts,
              'Time for compute step (s)': compute_ts, 'Bandwidth (MB/s)': bw,
              'Compression Factor': c_factor, 'Compression Time (s)': c_time,
              'Decompression time (s)': d_time,
              'Theoretical decompression time (s)': theoretical_d_time}
     plot(mems, speedups, "varying-memory.pdf", "Speedup for varying peak memory", "Memory (MB)",
-             "Speedup (x)", hline=1, vlines=[20000, 52000], more_y=[theoretical_speedup], fixed=fixed, xscale='log', textloc=[0.5, 0.5])
+             "Speedup (x)", hline=1, vlines=[overall_peak_mem, overall_peak_mem/c_factor], more_y=more_computes, fixed=fixed, xscale='log', textloc=[0.5, 0.5], more_y_labels=["Orig"]+computes)
 
-varying_peak_memory(nt, cp_size, compute_ts, #time to compute one timestep (s)
-                    bandwidth, # Memory bandwidth from stream (MB/s)
-                    c_factor, # Compression factor
-                    c_time, # Compression time(s)
-                    d_time, # Decompression time(s)
-                    t_d_time, # Theoretical decompression time (s)
-                    )
+
+def varying_peak_memory_total(nt, size_ts, compute_ts, bw, c_factor, c_time, d_time,
+                        theoretical_d_time):
+    p = Problem(nt, size_ts, compute_ts, bw)
+    min_time, overall_peak_mem = p.naive_strategy()
+    mems = logspace(4*size_ts, 2*overall_peak_mem, 200)
+    times_revolve = []
+    times_compression = []
+    for x in mems:
+        c_fw, c_r, c_s = p.revolve_compression(x, c_factor, c_time, d_time)
+        total_time_compression = c_fw + c_r + c_s
+
+        r_fw, r_r, r_s = p.revolve(x)
+        total_time_revolve = r_fw + r_r + r_s
+        times_revolve.append(total_time_revolve)
+        times_compression.append(total_time_compression)
+    
+    fixed = {'Timesteps': nt, 'Size of checkpoint (MB)': size_ts,
+             'Time for compute step (s)': compute_ts, 'Bandwidth (MB/s)': bw,
+             'Compression Factor': c_factor, 'Compression Time (s)': c_time,
+             'Decompression time (s)': d_time,
+             'Theoretical decompression time (s)': theoretical_d_time}
+
+    plot(mems, times_revolve, "varying-memory-total.pdf", "Execution time for varying peak memory", "Memory (MB)",
+             "Execution time (s)", more_y=[times_compression], fixed=fixed, xscale='log', textloc=[0.5, 0.5])
+
+
+
 
 # (Speedup vs) varying AI. Fixed compression.
 def varying_compute(nt, size_ts, peak_mem, bw, c_factor, c_time, d_time, more_peak_mem=None):
@@ -243,18 +283,10 @@ def varying_compute(nt, size_ts, peak_mem, bw, c_factor, c_time, d_time, more_pe
              'Compression Factor': c_factor, 'Compression Time (s)': c_time,
              'Decompression time (s)': d_time,}
     plot(computes, speedups, "varying-compute.pdf",
-         "Speedup for varying compute/timestep", "Compute time (s)", "Speedup (x)",
+         "Speedup for varying compute time per timestep", "Compute time (s)", "Speedup (x)",
          hline=1, more_y=more_speedups,
          more_y_labels=["Peak memory: %d" % x for x in [peak_mem] + more_peak_mem],
          fixed=fixed, xscale='log', textloc=[0.55, 0.55])
-
-varying_compute(nt, cp_size, peak_mem, # Peak memory
-                                   bandwidth, # Memory bandwidth from stream (MB/s)
-                    c_factor, # Compression factor
-                    c_time, # Compression time(s)
-                    d_time, # Decompression time(s)
-                    more_peak_mem=more_peak_mem
-                    )
 
 # (Speedup vs) compression ratios (and times)
 
@@ -271,12 +303,7 @@ def varying_compression(nt, size_ts, compute_ts, peak_mem, bw, filename, label):
          "Speedup for varying compression parameters", label, "Speedup (x)", hline=1,
          fixed=fixed, xscale='log')
     
-#varying_compression(nt, cp_size, compute_ts, #time to compute one timestep (s)
-#                    peak_mem, # Peak memory
-#                    bandwidth, # Memory bandwidth from stream (MB/s)
-#                    compression_filename, # File with compression data
-#                    compression_label
-#                    )
+
     
 # # For overthrust devito
 # # For NN
@@ -296,13 +323,9 @@ def varying_nt(size_ts, compute_ts, peak_mem, bw, f, c, d):
              'Peak memory (MB)': peak_mem,
              'Compression Factor': c_factor, 'Compression Time (s)': c_time,
              'Decompression time (s)': d_time,}
-    plot(nts, speedups, "varying-nt.pdf", "Speedup for varying number of timesteps", "Timesteps","Speedup (x)", hline=1, fixed=fixed, xscale='log', textloc=[0.5, 0.4])
+    plot(nts, speedups, "varying-nt.pdf", "Speedup for varying number of timesteps", "Timesteps","Speedup (x)", hline=1, fixed=fixed, xscale='log', textloc=[0.5, 0.4], basex=2)
     
-varying_nt(cp_size, compute_ts, #time to compute one timestep (s)
-                    peak_mem, # Peak memory
-                    bandwidth, # Memory bandwidth from stream (MB/s)
-                    c_factor, c_time, d_time
-                    )
+
 #Where is the tipping point?
 
 # Gives a speedup for everything that is costly and for cheap stuff, when memory is very constrained
@@ -326,4 +349,44 @@ def vary_all(size_ts, bw, f, c, d):
     np.save('results', results)
 
 #vary_all(cp_size, bandwidth, c_factor, c_time, d_time)
+    
+if __name__ == "__main__":
+    varying_peak_memory(nt, cp_size, compute_ts, #time to compute one timestep (s)
+                    bandwidth, # Memory bandwidth from stream (MB/s)
+                    c_factor, # Compression factor
+                    c_time, # Compression time(s)
+                    d_time, # Decompression time(s)
+                    t_d_time, # Theoretical decompression time (s)
+                    )
+
+    varying_peak_memory_total(nt, cp_size, compute_ts, #time to compute one timestep (s)
+                    bandwidth, # Memory bandwidth from stream (MB/s)
+                    c_factor, # Compression factor
+                    c_time, # Compression time(s)
+                    d_time, # Decompression time(s)
+                    t_d_time, # Theoretical decompression time (s)
+                    )
+
+    varying_compute(nt, cp_size, peak_mem, # Peak memory
+                                   bandwidth, # Memory bandwidth from stream (MB/s)
+                    c_factor, # Compression factor
+                    c_time, # Compression time(s)
+                    d_time, # Decompression time(s)
+                    more_peak_mem=more_peak_mem
+                    )
+
+    #varying_compression(nt, cp_size, compute_ts, #time to compute one timestep (s)
+#                    peak_mem, # Peak memory
+#                    bandwidth, # Memory bandwidth from stream (MB/s)
+#                    compression_filename, # File with compression data
+#                    compression_label
+#                    )
+
+    varying_nt(cp_size, compute_ts, #time to compute one timestep (s)
+                    peak_mem, # Peak memory
+                    bandwidth, # Memory bandwidth from stream (MB/s)
+                    c_factor, c_time, d_time
+                    )
+
+
     
