@@ -134,7 +134,8 @@ def platform_name():
     return platform
 
 def plot(x, y, filename, title, xlabel, ylabel, hline=None, more_y=None, more_y_labels=None,
-         fixed=None, xscale=None, yscale=None, vlines=None, textloc=None, basex=None):
+         fixed=None, xscale=None, yscale=None, vlines=None, textloc=None, basex=None,
+         legend_placement=0):
     plt.gcf().clear()
     if more_y_labels is not None:
         # We need labels for every series in more_y and one for the main series
@@ -158,14 +159,14 @@ def plot(x, y, filename, title, xlabel, ylabel, hline=None, more_y=None, more_y_
                 label = None
             plt.plot(x, series, linestyle='dotted', label=label)
         if more_y_labels is not None:
-            plt.legend(loc=9)
+            plt.legend(loc=legend_placement)
     
     if fixed is not None:
         fixed.update({"Platform" : platform_name()})
         fixed_params = ", \n".join(["%s: %s" % (key, value) for key, value in fixed.items()])
         if textloc is None:
             textloc = [0.5, 0.5]
-        plt.figtext(textloc[0], textloc[1], fixed_params, size=8)
+        plt.figtext(textloc[0], textloc[1], fixed_params, size=6)
     plt.title(title)
     if xscale is not None:
         if basex is not None:
@@ -232,7 +233,8 @@ def varying_peak_memory(nt, size_ts, compute_ts, bw, c_factor, c_time, d_time,
              'Decompression time (s)': d_time,
              'Theoretical decompression time (s)': theoretical_d_time}
     plot(mems, speedups, "varying-memory.pdf", "Speedup for varying peak memory", "Memory (MB)",
-             "Speedup (x)", hline=1, vlines=[overall_peak_mem, overall_peak_mem/c_factor], more_y=more_computes, fixed=fixed, xscale='log', textloc=[0.5, 0.5], more_y_labels=["Orig"]+computes)
+             "Speedup (x)", hline=1, vlines=[overall_peak_mem, overall_peak_mem/c_factor], more_y=more_computes, fixed=fixed, xscale='log', textloc=[0.5, 0.35], more_y_labels=["Orig"]+computes,
+             legend_placement=9)
 
 
 def varying_peak_memory_total(nt, size_ts, compute_ts, bw, c_factor, c_time, d_time,
