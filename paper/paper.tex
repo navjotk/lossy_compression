@@ -74,7 +74,7 @@ London, UK }
 Atlanta, GA, USA\\}
 \and
 \IEEEauthorblockN{Kaiyuan Hou}
-\IEEEauthorblockA{\textit{Department of EECS} \\
+\IEEEauthorblockA{\textit{Department of Electrical Engineering and Computer Science} \\
 \textit{Northwestern University}\\
 Evanston, IL, USA \\
 }
@@ -86,7 +86,7 @@ London, UK \\
 }
 \and
 \IEEEauthorblockN{Paul Hovland}
-\IEEEauthorblockA{\textit{Mathematics and Computer Science} \\
+\IEEEauthorblockA{\textit{Mathematics and Computer Science Division} \\
 \textit{Argonne National Laboratory}\\
 Lemont, IL, USA \\
 }
@@ -434,27 +434,39 @@ time, the recomputation overhead decreases
 because $\mathbf{F}$ times more checkpoints are now available.
 
 \section{Results}
-We notice that the combination of compression and checkpointing
-outperforms pure checkpointing in some scenarios, and that wherever
-possible, compression alone outperforms checkpointing. This is made
-evident in figure \ref{fig:varying_memory} which shows a clear split
-in three different regions. The right-most region of this plot has
-been the focus of many studies mentioned earlier in this paper. The
-extension to the regions with lower memory is new here and we see that
-the maximum benefit is gained in the most memory-constrained scenarios
-(region 1), while there is a region where Revolve-based recomputation
-alone would be more beneficial (region 2). As expected, compression
-alone (with no Revolve) dominates region 3.
-Figure \ref{fig:varying_memory} shows the speedups predicted by the
-performance model for varying amount of available memory. A big
-shortcoming that was realised in ZFP was the lack of parallelization
-in the decompression functions. The ZFP manual talks about the
-difficulty in implementing a parallel mode decompressor. To estimate
-the benefit from parallel decompression, we scaled the serial
-decompression time by the same factor that we saw between the serial
-and parallel compressors on a given platform. We called this scaled
-decompression time, ``theoretical decompression time'' and show this
-on the plot with a dotted line. 
+We can distinguish three different scenarios, depending on the amount of
+available memory.
+\begin{enumerate}
+\item If the memory is insufficient even with compression to store the entire
+trajectory, one can either use checkpointing only, or combine checkpointing with
+compression.
+\item If the available memory is not sufficient to store the uncompressed
+trajectory, but large enough to store the entire compressed trajectory, we study
+the two possible strategies: Either use compression only, or use checkpointing
+only.
+\item If the available system memory is large enough to hold the entire
+uncompressed trajectory, neither compression nor checkpointing is necessary.
+\end{enumerate}
+All three scenarios can be seen in figure~\ref{fig:varying_memory}.
+The second scenario was studied in previous work~\cite{cyr2015towards}, while
+the combined method is also applicable to the first scenario, for which previous
+work has only used checkpointing without compression.
+
+We can identify a number of factors that make compression more likely to be
+beneficial compared to pure checkpointing: A very small system memory size and a
+large number of time steps lead to a rapidly increasing recompute factor, and
+compression can substantially reduce this recompute factor. This can be seen in
+figures~\ref{fig:varying_memory} and~\ref{fig:varying_nt}.
+
+The extent to which the recompute factor affects the overall runtime also
+depends on the cost to compute each individual time step. If the compute cost
+per time step is large compared to the compression and decompression cost, then
+compression is also likely to be beneficial, as shown in
+figure~\ref{fig:varying_compute}. As the time per time step increases and the
+compression cost becomes negligible, we observe that the ratio between the runtime
+of the combined method and that of pure checkpointing is only determined by the
+difference in recompute factors.
+
 \begin{figure}
 \begin{center}
 \includegraphics[width=\linewidth]{images/varying-memory.pdf}
@@ -475,13 +487,6 @@ that has been well-studied in past work.}
 \label{fig:varying_memory}
 \end{figure}
 
-Figure~\ref{fig:varying_compute} shows the speedups predicted by the
-performance model for kernels of different computational cost. Perhaps
-unsurprisingly, the benefit gained by compression drops rapidly if the
-time to compute a single timestep is less than the time to compress
-the computed data (since recomputing would be cheaper in that case). For
-increasing computational cost, the speedup from compression saturates
-at a bound. 
 \begin{figure}
 \begin{center}
 \includegraphics[width=\linewidth]{images/varying-compute.pdf}
@@ -496,10 +501,6 @@ costs, the benefits are bounded.}
 \label{fig:varying_compute}
 \end{figure}
 
-Figure~\ref{fig:varying_nt} shows the speedups predicted for differing
-number of timesteps. It is interesting to note that there is a
-consistent increase in the speedup as the number of timesteps goes
-up. 
 \begin{figure}
 \begin{center}
 \includegraphics[width=\linewidth]{images/varying-nt.pdf}
@@ -533,6 +534,10 @@ checkpoint would be compressed and decompressed. However, in scenarios
 where the available memory is only slightly less than the required
 memory, an implementation that compresses only a subset of the
 checkpoints might outperform the expectations of our model. 
+
+Our current experimental setup has two  that was realised in ZFP was the lack of parallelization
+in the decompression functions. The ZFP manual talks about the
+difficulty in implementing a parallel mode decompressor.
 
 
 
