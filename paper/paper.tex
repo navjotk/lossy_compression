@@ -474,16 +474,17 @@ difference in recompute factors.
 \caption{The speedups predicted by the performance model for varying
   memory. The baseline
 (1.0) is the performance of a Revolve-only implementation under the
-same conditions. The dotted curve represents the hypothetical speedup
-if ZFP supported parallel decompression. The two vertical lines at 20GB and 52GB clearly
-divide the plot into 3 regions. The left-most region, with less than
-20GB memory sees the maximum benefit from compression. The middle
-region, with memory between 20GB and 52GB, is better off using only
-Revolve and no compression. The right-most region, with memory greater
-than 52GB represents the scenario where the entire history of the
-wavefield can fit in memory post-compression. In this case compression
-eliminates the use of Revolve - hence the speedup. This is the region
-that has been well-studied in past work.}
+same conditions. The different curves represent kernels with differing
+compute times (represented here as a factor of the sum of compression
+and decompression times). The first vertical line at $~$ 53GB marks the
+spot where the compressed wavefield can completely fit in memory and
+Revolve is unnecessary if using compression. The second vertical line
+at $~$ 2.2 TB marks the spot where the entire uncompressed wavefield can
+fit in memory and neither Revolve nor compression is necessary. The
+region to the right is where these optimisations are not necessary or
+relevant. The middle region has been the subject of past studies using
+compression in adjoint problems. The region to the left is the focus
+of this paper.}
 \label{fig:varying_memory}
 \end{figure}
 
