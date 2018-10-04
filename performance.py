@@ -232,9 +232,10 @@ def varying_peak_memory(nt, size_ts, compute_ts, bw, c_factor, c_time, d_time,
              'Compression Factor': c_factor, 'Compression Time (s)': c_time,
              'Decompression time (s)': d_time,
              'Theoretical decompression time (s)': theoretical_d_time}
+    legend_labels = ["Measured (TTI)"] + ["%.2f x (c_time + d_time)" % x for x in computes]
     plot(mems, speedups, "varying-memory.pdf", "Speedup for varying peak memory", "Memory (MB)",
-             "Speedup (x)", hline=1, vlines=[overall_peak_mem, overall_peak_mem/c_factor], more_y=more_computes, fixed=fixed, xscale='log', textloc=[0.5, 0.35], more_y_labels=["Orig"]+computes,
-             legend_placement=9)
+             "Speedup (x)", hline=1, vlines=[overall_peak_mem, overall_peak_mem/c_factor], more_y=more_computes, fixed=fixed, xscale='log', textloc=[0.5, 0.40], more_y_labels=legend_labels,
+             legend_placement=(0.41, 0.69))
 
 
 def varying_peak_memory_total(nt, size_ts, compute_ts, bw, c_factor, c_time, d_time,
@@ -258,7 +259,6 @@ def varying_peak_memory_total(nt, size_ts, compute_ts, bw, c_factor, c_time, d_t
              'Compression Factor': c_factor, 'Compression Time (s)': c_time,
              'Decompression time (s)': d_time,
              'Theoretical decompression time (s)': theoretical_d_time}
-
     plot(mems, times_revolve, "varying-memory-total.pdf", "Execution time for varying peak memory", "Memory (MB)",
              "Execution time (s)", more_y=[times_compression], fixed=fixed, xscale='log', textloc=[0.5, 0.5])
 

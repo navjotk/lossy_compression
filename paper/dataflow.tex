@@ -4,17 +4,17 @@
      \node[punktchain, join, on chain=1] (t1) {$F(0)$};
      \node[punktchain, join, on chain=1] (t2)      {$F(1)$};
      \node[punktchain, join, on chain=1] (t3)      {$F(2)$};
-     \node[punktchain, join, on chain=1] (t4) {$F(3)$};
-     \node[punktchain, join, on chain=1] (t5) {$F(4)$};
-     \node[punktchain, join, on chain=1] (t6) {$F(5)$};
+     %\node[punktchain, join, on chain=1] (t4) {$F(3)$};
+     %\node[punktchain, join, on chain=1] (t5) {$F(4)$};
+     %\node[punktchain, join, on chain=1] (t6) {$F(5)$};
      \node[punktchain, join, draw=none, on chain=1] (ellipsis1) {$\cdots$};
      \node[punktchain, join, on chain=1] (tn) {$F(n)$};
 
 \node[punktchain, below=1cm of tn, on chain=2] (atn) {$R(n)$};
 \node[punktchain, join, draw=none, on chain=2] (ellipsis2) {$\cdots$};
-     \node[punktchain, join, on chain=2] (at6)      {$R(5)$};
-     \node[punktchain, join, on chain=2] (at5)      {$R(4)$};
-     \node[punktchain, join, on chain=2] (at4) {$R(3)$};
+     %\node[punktchain, join, on chain=2] (at6)      {$R(5)$};
+     %\node[punktchain, join, on chain=2] (at5)      {$R(4)$};
+     %\node[punktchain, join, on chain=2] (at4) {$R(3)$};
      \node[punktchain, join, on chain=2] (at3) {$R(2)$};
      \node[punktchain, join, on chain=2] (at2) {$R(1)$};
      \node[punktchain, join, on chain=2] (at1) {$R(0)$};
@@ -22,8 +22,8 @@
 \draw[|-,-|,->, thick,] (t1.south) |-+(0,-1em)-| (at1.north);
 \draw[|-,-|,->, thick,] (t2.south) |-+(0,-1em)-| (at2.north);
 \draw[|-,-|,->, thick,] (t3.south) |-+(0,-1em)-| (at3.north);
-\draw[|-,-|,->, thick,] (t4.south) |-+(0,-1em)-| (at4.north);
-\draw[|-,-|,->, thick,] (t5.south) |-+(0,-1em)-| (at5.north);
-\draw[|-,-|,->, thick,] (t6.south) |-+(0,-1em)-| (at6.north);
+%\draw[|-,-|,->, thick,] (t4.south) |-+(0,-1em)-| (at4.north);
+%\draw[|-,-|,->, thick,] (t5.south) |-+(0,-1em)-| (at5.north);
+%\draw[|-,-|,->, thick,] (t6.south) |-+(0,-1em)-| (at6.north);
 \draw[|-,-|,->, thick,] (tn.south) |-+(0,-1em)-| (atn.north);
   \end{tikzpicture}
