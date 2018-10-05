@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import csv
 from matplotlib import ticker
-
+from cycler import cycler
 
 
 class CounterOperator(Operator):
@@ -135,7 +135,9 @@ def platform_name():
 
 def plot(x, y, filename, title, xlabel, ylabel, hline=None, more_y=None, more_y_labels=None,
          fixed=None, xscale=None, yscale=None, vlines=None, textloc=None, basex=None,
-         legend_placement=0):
+         legend_placement=0, markevery=1):
+    linestyles = ['-', '--', ':', '-.']
+    
     plt.gcf().clear()
     if more_y_labels is not None:
         # We need labels for every series in more_y and one for the main series
@@ -144,7 +146,7 @@ def plot(x, y, filename, title, xlabel, ylabel, hline=None, more_y=None, more_y_
         more_y_labels = more_y_labels[1:]
     else:
         label = None
-    plt.plot(x, y, label=label)
+    plt.plot(x, y, label=label, marker='.', markevery=markevery)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     
@@ -157,7 +159,7 @@ def plot(x, y, filename, title, xlabel, ylabel, hline=None, more_y=None, more_y_
                 label = more_y_labels[i]
             else:
                 label = None
-            plt.plot(x, series, linestyle='dotted', label=label)
+            plt.plot(x, series, label=label, linestyle=linestyles[i])
         if more_y_labels is not None:
             plt.legend(loc=legend_placement)
     
@@ -267,7 +269,7 @@ def varying_peak_memory_total(nt, size_ts, compute_ts, bw, c_factor, c_time, d_t
 
 # (Speedup vs) varying AI. Fixed compression.
 def varying_compute(nt, size_ts, peak_mem, bw, c_factor, c_time, d_time, more_peak_mem=None):
-    computes = linspace(0, 100, 200)
+    computes = logspace(0.001, 100, 200)
     speedups = []
     
     if more_peak_mem is not None:
@@ -280,6 +282,7 @@ def varying_compute(nt, size_ts, peak_mem, bw, c_factor, c_time, d_time, more_pe
         if more_peak_mem is not None:
             for i, pm in enumerate(more_peak_mem):
                 more_speedups[i].append(p.compression_speedup(pm, c_factor, c_time, d_time))
+
     fixed = {'Timesteps': nt, 'Size of checkpoint (MB)': size_ts,
              'Peak memory (MB)': peak_mem, 'Bandwidth (MB/s)': bw,
              'Compression Factor': c_factor, 'Compression Time (s)': c_time,
@@ -288,7 +291,7 @@ def varying_compute(nt, size_ts, peak_mem, bw, c_factor, c_time, d_time, more_pe
          "Speedup for varying compute time per timestep", "Compute time (s)", "Speedup (x)",
          hline=1, more_y=more_speedups,
          more_y_labels=["Peak memory: %d" % x for x in [peak_mem] + more_peak_mem],
-         fixed=fixed, xscale='log', textloc=[0.55, 0.55])
+         fixed=fixed, xscale='log', textloc=[0.25, 0.45], markevery=10)
 
 # (Speedup vs) compression ratios (and times)
 
@@ -313,7 +316,7 @@ def varying_compression(nt, size_ts, compute_ts, peak_mem, bw, filename, label):
 
 
 def varying_nt(size_ts, compute_ts, peak_mem, bw, f, c, d):
-    nts = linspace(2000, 20000, 200)
+    nts = logspace(200, 20000, 200)
     nts = [math.floor(x) for x in nts]
     speedups = []
     for nt in nts:
@@ -325,7 +328,7 @@ def varying_nt(size_ts, compute_ts, peak_mem, bw, f, c, d):
              'Peak memory (MB)': peak_mem,
              'Compression Factor': c_factor, 'Compression Time (s)': c_time,
              'Decompression time (s)': d_time,}
-    plot(nts, speedups, "varying-nt.pdf", "Speedup for varying number of timesteps", "Timesteps","Speedup (x)", hline=1, fixed=fixed, xscale='log', textloc=[0.5, 0.4], basex=2)
+    plot(nts, speedups, "varying-nt.pdf", "Speedup for varying number of timesteps", "Timesteps","Speedup (x)", hline=1, fixed=fixed, xscale='log', textloc=[0.6, 0.2], basex=2, markevery=20)
     
 
 #Where is the tipping point?
@@ -389,6 +392,7 @@ if __name__ == "__main__":
                     bandwidth, # Memory bandwidth from stream (MB/s)
                     c_factor, c_time, d_time
                     )
+
 
 
     
