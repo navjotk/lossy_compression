@@ -490,13 +490,13 @@ beneficial as the number of timesteps is increased.}
 What are the problems?
 The performance we developed might be useful in judging whether compression
 would be helpful in a particular scenario without actually building a
-complete implementation first. We have tried to keep the algorithm application
+complete implementation first. We have tried to keep it application
 and platform agnostic in order to maximize its applicability. However
 there are a few limitations in this model. Firstly, we assumed that
 the compression performance we saw for a single checkpoint is
 representative of any checkpoint throughout the simulation. This
 assumption might have been completely wrong if made about a checkpoint
-in the first few time steps since we consistently saw up to 800x
+in the first few time steps since we consistently saw upto 800x
 compression in those cases - since they are mostly zeros. In order for
 this assumption to be realistic, we use a checkpoint close to the end
 of the simulation so that most of the field is perturbed and hence is
