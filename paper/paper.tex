@@ -193,7 +193,12 @@ compression and decompression time can be less than the time saved from the
 reduction in data that needs to be communicated across MPI nodes or between a
 GPU and a host computer~\cite{gpu-compression}.
 
-Another way of using compression to speed up seismic inversion or other adjoint-based methods is to use it \emph{instead} of checkpointing. If the compression ratio is sufficient to fit the entire data in memory, checkpointing is no longer necessary. Previous work has discussed this situation in the context of computational fluid dynamics~\cite{cyr2015towards} and seismic inversion using compression method specifically designed for
+Another way of using compression to speed up adjoint-based methods is to use it \emph{instead} of
+checkpointing. If the compression ratio is sufficient to fit the
+entire data in memory, checkpointing is no longer necessary. Previous
+work has discussed this in the context of computational
+fluid dynamics~\cite{cyr2015towards} and seismic inversion using
+compression algorithms specifically designed for
 wavefields~\cite{dalmau2014lossy,boehm2016wavefield}.
 
 In this paper, we extend the previous studies by \emph{combining} checkpointing
@@ -202,13 +207,21 @@ available memory even after compression, for example for very large adjoint
 problems, or for problems where the required accuracy limits the achievable
 compression ratios.
 
-Compared to the use of only checkpointing without compression, our combined method often improves performance. This is a consequence of the reduced size of stored program states, allowing more program states to be stored during the forward computation. This in turn reduces the amount of recomputation that needs to be performed. On the other hand, the compression and decompression itself takes time. We therefore provide a comprehensive performance model that predicts whether the combined method is beneficial, that is, whether the time spent compressing and decompressing is less than the time saved by reduced
-recomputations.
+Compared to the use of only checkpointing without compression, our
+combined method often improves performance. This is a consequence of
+the reduced size of stored program states, allowing more program
+states to be stored during the forward computation. This in turn
+reduces the amount of recomputation that needs to be performed. On the
+other hand, the compression and decompression itself takes time. We
+therefore provide a comprehensive performance model that predicts
+whether the combined method is beneficial, that is, whether the time
+spent compressing and decompressing is less than the time saved by
+reduced recomputations.
 
-We present test cases that use a TODO describe Richter
-and TODO describe JLSE/SKX node system, henceforth called Richter and Skylake,
-respectively. We discuss performance results for varying error tolerances for
-the lossy ZFP compression algorithm ranging from TODO to TODO, and different
+For benchmarking we used a dual-socket
+Intel(R) Xeon(R) Platinum 8180M @ 2.50 Ghz (28 cores each), henceforth
+called Skylake. We discuss performance results for varying error tolerances for
+the lossy ZFP compression algorithm ranging from $10^0$ to $10^{-15}$, and different
 types of forward and adjoint computations that vary in their ratio between
 compute cost and state size. 
 
@@ -229,7 +242,7 @@ m(x)\frac{\partial^2 u(t, x)}{\partial t^2} - \Laplace u(t, x) = q(t, x),
 \end{equation}
 where $m(x) = \frac{1}{c^2(x)}$ is the squared slowness, $c(x)$ the spatially
 dependent speed of sound, $u(t, x)$ is the pressure wavefield, $\Laplace u(t, x)$ denotes the laplacian of the wavefield and $q(t, x)$ is a source term.
-Some of our experiments in Section TODO are performed using a more accurate
+Some of our experiments in Section \ref{sec:results} are performed using a more accurate
 and more complex version of this equation called Tilted Transverse Isotropy
 (TTI)~\cite{zhang2011stable} that takes into account the anisotopic propagation of waves in the earth subsurface (directional dependency of the speed of sound). We leave the TTI equations out of this paper
 for brevity. 
@@ -309,18 +322,19 @@ user, but does not provide any bounds on accuracy loss.
 Figure~\ref{fig:tolerance_cf_plot} shows compression ratios for a variety of
 settings for the three modes.
 
-The highest compression efficiency TODO define this is achieved in the
-fixed-tolerance mode albeit with highly unpredictable compression ratios. Figure
-\ref{fig:decompressed_error} shows the spatial distribution of the error after
-compression and decompression, compared to the original field, using
-fixed-tolerance mode.
+The compression ratio achieved per unit time spent during compressing
+and decompressing was seen to be highest in the fixed-tolerance mode
+albeit with highly unpredictable compression ratios. Figure
+\ref{fig:decompressed_error} shows the spatial distribution of the
+error after compression and decompression, compared to the original
+field, using fixed-tolerance mode.
 
 In our experiments using Devito, the time required to compress a checkpoint was
-in the same orderof magnitude as the time taken to compute a timestep.
+in the same order of magnitude as the time taken to compute a timestep.
 
 \begin{figure}
 \begin{center}
-\includegraphics[width=0.8\linewidth]{images/tolerance-cf-richter.pdf}
+\includegraphics[width=0.9\linewidth]{images/tolerance-cf-richter.pdf}
 \end{center}
 \caption{Compression ratios achieved on compressing the wavefield. We
   define compression ratio as the ratio between the size of the
@@ -377,14 +391,13 @@ This storage overhead is given by
 \mathbf{N}_R \cdot \frac{\mathbf{S}}{\mathbf{B}}.
 \label{eqn:storage}
 \end{equation}
-where $\mathbf{N}_W$ is the total number of times Revolve writes checkpoints for a single run, $ \mathbf{N}_R$ 
-is the number of times checkpoints are read, and $\mathbf{B}$ is the memory bandwidth of the target system. 
-
-The total time to solution in this scenario becomes
+where $\mathbf{N}_W$ is the total number of times Revolve writes
+checkpoints for a single run, $ \mathbf{N}_R$ is the number of times
+checkpoints are read, and $\mathbf{B}$ is the memory bandwidth of the
+target system. The total time to solution becomes
 \begin{equation}
 T_R = 2 \cdot \mathbf{C} \cdot \mathbf{N} + \mathbf{O}_R(N, M) + \mathbf{O}_S.
-\end{equation}
-
+\end{equation} 
 By using compression, the size of each checkpoint is reduced and therefore the
 number of checkpoints available is increased ($M$ in equation
 \ref{eqn:recompute}). This reduces the recomputation overhead $\mathbf{O}_R$,
@@ -409,6 +422,7 @@ time, the recomputation overhead decreases
 because $\mathbf{F}$ times more checkpoints are now available.
 
 \section{Results}
+\label{sec:results}
 We can distinguish three different scenarios, depending on the amount of
 available memory.
 \begin{enumerate}
@@ -444,7 +458,7 @@ difference in recompute factors.
 
 \begin{figure}
 \begin{center}
-\includegraphics[width=\linewidth]{images/varying-memory.pdf}
+\includegraphics[width=0.9\linewidth]{images/varying-memory.pdf}
 \end{center}
 \caption{The speedups predicted by the performance model for varying
   memory. The baseline
@@ -465,7 +479,7 @@ of this paper.}
 
 \begin{figure}
 \begin{center}
-\includegraphics[width=\linewidth]{images/varying-compute.pdf}
+\includegraphics[width=0.9\linewidth]{images/varying-compute.pdf}
 \end{center}
 \caption{The speedups predicted by the performance model for varying
   compute cost. The baseline
@@ -479,7 +493,7 @@ costs, the benefits are bounded.}
 
 \begin{figure}
 \begin{center}
-\includegraphics[width=\linewidth]{images/varying-nt.pdf}
+\includegraphics[width=0.9\linewidth]{images/varying-nt.pdf}
 \end{center}
 \caption{The speedups predicted by the performance model for varying
   number of timesteps to be reversed. The baseline
@@ -490,18 +504,17 @@ beneficial as the number of timesteps is increased.}
 \end{figure}
 
 \section{Conclusions and Future work}
-We use lossy compression to reduce the computational overhead of checkpointing
-in an adjoint computation used in full waveform inversion, a common method in
-seismic imaging applications whose memory footprint commonly exceeds the
-available memory size in high performance computing systems. We also developed a
-performance model that computes whether or not the combination of compression
-and checkpointing will outperform pure checkpointing or pure compression in a
-variety of scenarios, depending on the available memory size, computational
-intensity of the application, and compression ratio and throughput of the
-compression algorithm.
-
-Our current result has several limitations that we plan to address in future
-work:
+We use lossy compression to reduce the computational overhead of
+checkpointing in an adjoint computation used in full waveform
+inversion, a common method in seismic imaging applications whose
+memory footprint commonly exceeds the available memory size in high
+performance computing systems. We also developed a performance model
+that computes whether or not the combination of compression and
+checkpointing will outperform pure checkpointing or pure compression
+in a variety of scenarios, depending on the available memory size,
+computational intensity of the application, and compression ratio and
+throughput of the compression algorithm. Our current result has
+several limitations that we plan to address in future work:
 \begin{itemize}
 \item We do not discuss the accuracy of the results after decompression. This
 depends on the application, compression algorithm, and affects the achievable
@@ -509,30 +522,30 @@ compression ratios. Our performance model only requires knowledge of the
 compression time and ratio, and it is up to the user of this model to determine
 what accuracy is needed and thus what compression ratio is realistic for their
 application.
-\item We only present results using the ZFP compression library. Again, the
-performance model is independent of this, but it would be interesting to try a
-greater variety of compression algorithms.
-\item ZFP currently only supports serial decompression. If ZFP supported
+\item We only present results using the ZFP compression library. It
+would be interesting to try a greater variety of compression
+algorithms.
+\item ZFP only supports serial decompression. If ZFP supported
 parallel decompression, our experiments would likely show a geater region in
 which the combined method is faster than pure checkpointing. Furthermore, ZFP
-only supports fields with up to three dimensions, and it is possible that
-exploiting similarities between fields at different time steps would yield a
+only supports fields with up to three dimensions, while
+exploiting similarities between fields at different time steps may yield a
 better compression ratio.
-\item Our performance model is based on uniform compression ratios and times.
-However, many applications, including FWI, are likely to have initial conditions
-that contain little information and are easily compressed, and the compression
-ratio gradually declines as the field becomes more complex over time. We have
-based our experiments on the final wave field, which is presumably the most
-difficult to compress.
-\item In comparing pure compression with pure checkpointing, we assume that
-every checkpoint would be compressed and decompressed. However, in scenarios
-where the available memory is only slightly less than the required memory, an
-implementation that compresses only a subset of the checkpoints might outperform
-the expectations of our model. 
-\item We do not discuss multi-level checkpointing, where some checkpoints are
-stored on a slower, larger device such as a solid state drive. We expect
-compression to be particularly beneficial in these scenarios due to the reduced
-data transfer sizes.
+\item Our performance model is based on uniform compression ratios and
+times.  However, many applications, including FWI, are likely to have
+initial conditions that contain little information and are easily
+compressed, and the compression ratio gradually declines as the field
+becomes more complex. We based our experiments on the final wave
+field, which is presumably difficult to compress.
+\item In comparing pure compression with pure checkpointing, we assume
+that every checkpoint is compressed and decompressed. However, if the
+available memory is only slightly less than the required memory, an
+implementation that compresses only a subset of the checkpoints might
+outperform the expectations of our model.
+\item We do not discuss multi-level checkpointing, where some
+checkpoints are stored on a slower, larger device. We expect
+compression to be beneficial in these scenarios due to reduced data
+transfer sizes.
 \end{itemize}
 
 \section*{Acknowledgment}
