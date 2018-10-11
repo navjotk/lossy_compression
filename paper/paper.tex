@@ -148,15 +148,28 @@ workload across more processors, but also to utilize the large amount of memory
 available in distributed systems. While this strategy is very powerful, the
 number of compute nodes and therefore the amount of memory that can be used
 efficiently is limited, for example by communication overheads that start to
-dominate as the domain is split into increasingly small pieces~\cite{virieux2009seismic}. Secondly, this method is broadly used on conventional clusters but can be drastically more complicated to seup and slower due to the communication in the Cloud.
-Another common strategy in seismic inversion is to only store values at the boundaries of the domain at each timestep, and reconstruct the rest of the wavefield when required~\cite{clapp2009reverse,yang2014rtm} with time reversal of the wave equation. However, this method is not applicable for wave equations that are not time reversible when for example physical attenuation is included.
+dominate as the domain is split into increasingly small
+pieces~\cite{virieux2009seismic}. Secondly, this method is broadly
+used on conventional clusters but can be drastically more complicated
+to seup and slower due to the communication in a cloud-based
+setup. 
+Another common strategy in seismic inversion is to only store values
+at the boundaries of the domain at each timestep, and reconstruct the
+rest of the wavefield when
+required~\cite{clapp2009reverse,yang2014rtm} with time reversal of the
+wave equation. However, this method is not applicable for wave
+equations that are not time reversible when for example physical
+attenuation is included.
 
 Checkpointing is yet another strategy to reduce the memory overhead. Only a
 subset of the program states during the forward pass is stored (and the rest
 discarded). The discarded data is recomputed when needed by restarting the
-forward pass from the last available stored state. The question which states
-should be stored and which states should be recomputed to minimize the total
-amount of recomputation work has been answered under certain assumptions with the Revolve algorithm~\cite{griewank2000algorithm}.  Other authors have subsequently developed extensions to Revolve that are optimal under less restrictive assumptions~\cite{wang2009minimal,aupy2016optimal,schanen2016asynchronous}.
+forward pass from the last available stored state. The Revolve
+algorithm~\cite{griewank2000algorithm} provides an answer to the
+question of which states should be stored and which states should be recomputed to minimize the total
+amount of recomputation work. Other authors have subsequently
+developed extensions to Revolve that are optimal under different
+assumptions~\cite{stumm2009multistage, wang2009minimal,aupy2016optimal,schanen2016asynchronous}.
 
 \begin{figure}
 \begin{center}
@@ -181,7 +194,7 @@ guarantee that the error does not exceed certain absolute or relative error
 metrics. Typically, lossy compression is more effective in reducing the data
 size. Most popular compression packages offer various settings that allow a
 tradeoff between compression ratio, accuracy, and compression and decompression
-time. In this work we use the ZFP package to perform lossy compression.
+time.
 
 It is worth noting that another data reduction strategy is to typecast values
 into a lower precision format, for example, from double precision to single
@@ -255,7 +268,7 @@ The solution to equation~\ref{eqn:wave} forms the forward problem. The seismic i
 
 This optimization problem is usually solved using gradient based methods such as steepest descent,
 where the gradient is computed using the adjoint-state method that involves
-the data-flow pattern from figure \ref{fig:dataflow}.
+the data-flow pattern from Figure \ref{fig:dataflow}.
 
 The values of $m(x)$ used in this work are derived from the Overthrust
 model~\cite{aminzadeh1996three} over a grid of $287 \times 881 \times 881$
@@ -309,7 +322,7 @@ implementation of ZFP.
   during compression and decompression using the fixed-tolerance
   mode. It is interesting to note that the errors are more or less
   evenly distributed across the domain with only slight variations
-  corresponding to the wave amplitude (from the field plot in figure
+  corresponding to the wave amplitude (from the field plot in Figure
   \ref{fig:uncompressed}. A small block-like structure characteristic of
   ZFP can be seen.}
 \label{fig:decompressed_error}
@@ -372,7 +385,7 @@ here in equation \ref{eqn:recompute}.
 \begin{equation}
 p(N, M) = \begin{cases}
       N(N-1) /2, & \text{if}\ M=1 \\
-      \min\limits_{1<=\widetilde{N}<=N} \{\widetilde{N} + \mathbf{O}_R(\widetilde{N}, M) + \mathbf{O}_R(N-\widetilde{N}, M-1)\}, & \text{if}\ M>1
+      \min\limits_{1<=\widetilde{N}<=N} \{\widetilde{N} + p(\widetilde{N}, M) + p(N-\widetilde{N}, M-1)\}, & \text{if}\ M>1
     \end{cases}
     \label{eqn:recompute}
 \end{equation}
@@ -385,19 +398,20 @@ In an ideal implementation, the storage overhead $\mathbf{O}_S$ might be zero, s
 be done ``in-place'', but in practice, checkpoints are generally stored in a separate section of memory and they
 need to be transferred to a ``computational'' section of the memory where the compute is performed, and then
 the results copied back to the checkpointing memory. This copying is a common feature of checkpointing
-implementations, and might pose a non-trivial overhead in scenarios where the computation is heavily bandwidth-bound. 
+implementations, and might pose a non-trivial overhead in some scenarios. 
 This storage overhead is given by
 \begin{equation}
-\mathbf{O}_{SR} = \mathbf{N}_W \cdot \frac{\mathbf{S}}{\mathbf{B}} +
-\mathbf{N}_R \cdot \frac{\mathbf{S}}{\mathbf{B}}.
+\mathbf{O}_{SR}(N, M) = \mathbf{W}(N, M) \cdot \frac{\mathbf{S}}{\mathbf{B}} +
+\mathbf{R}(N, M) \cdot \frac{\mathbf{S}}{\mathbf{B}}
 \label{eqn:storage}
 \end{equation}
-where $\mathbf{N}_W$ is the total number of times Revolve writes
-checkpoints for a single run, $ \mathbf{N}_R$ is the number of times
+where $\mathbf{W}$ is the total number of times Revolve writes
+checkpoints for a single run, $ \mathbf{R}$ is the number of times
 checkpoints are read, and $\mathbf{B}$ is the memory bandwidth of the
 target system. The total time to solution becomes
 \begin{equation}
-T_R = 2 \cdot \mathbf{C} \cdot \mathbf{N} + \mathbf{O}_R(N, M) + \mathbf{O}_S.
+T_R = 2 \cdot \mathbf{C} \cdot \mathbf{N} + \mathbf{O}_R(N, M) +
+\mathbf{O}_{SR}(N, M)
 \end{equation} 
 By using compression, the size of each checkpoint is reduced and therefore the
 number of checkpoints available is increased ($M$ in equation
@@ -405,7 +419,7 @@ number of checkpoints available is increased ($M$ in equation
 while at the same time adding overheads related to compression and decompression
 in $\mathbf{O}_S$.
 To be beneficial, the reduction in $\mathbf{O}_R$ must offset the increase in 
-$\mathbf{O}_S$, leading to an overall decrease in the time to solution $T$.
+$\mathbf{O}_{SR}$, leading to an overall decrease in the time to solution $T$.
 
 Our performance model assumes
  that the compression algorithm behaves uniformly
@@ -413,9 +427,11 @@ across the different time steps of the simulation, i.e. that we get the same com
 decompression time, no matter which of the $N$ possible checkpoints we try to compress/decompress. The storage overhead
 now becomes
 \begin{equation}
-\mathbf{O}_{SR} = \mathbf{N}_W \cdot \left(\frac{\mathbf{S}}{\mathbf{F}
-  \cdot \mathbf{B}} + t_c\right) + \mathbf{N}_R \cdot
+\begin{split}
+\mathbf{O}_{SR}(N, M) = &\mathbf{W}(N, M \cdot F) \cdot \left(\frac{\mathbf{S}}{\mathbf{F}
+  \cdot \mathbf{B}} + t_c\right) +\\&\mathbf{R}(N, M \cdot F) \cdot
 \left(\frac{\mathbf{S}}{\mathbf{F} \cdot \mathbf{B}} + t_d\right)
+\end{split}
 \end{equation}
 where $\mathbf{F}$ is the compression ratio (i.e. the ratio between the uncompressed and compressed checkpoint), and $t_c$
 and $t_d$ are compression and decompression times, respectively. At the same
@@ -437,7 +453,7 @@ only.
 \item If the available system memory is large enough to hold the entire
 uncompressed trajectory, neither compression nor checkpointing is necessary.
 \end{enumerate}
-All three scenarios can be seen in figure~\ref{fig:varying_memory}.
+All three scenarios can be seen in Figure~\ref{fig:varying_memory}.
 The second scenario was studied in previous work~\cite{cyr2015towards}, while
 the combined method is also applicable to the first scenario, for which previous
 work has only used checkpointing without compression.
@@ -446,13 +462,13 @@ We can identify a number of factors that make compression more likely to be
 beneficial compared to pure checkpointing: A very small system memory size and a
 large number of time steps lead to a rapidly increasing recompute factor, and
 compression can substantially reduce this recompute factor. This can be seen in
-figures~\ref{fig:varying_memory} and~\ref{fig:varying_nt}.
+Figures~\ref{fig:varying_memory} and~\ref{fig:varying_nt}.
 
 The extent to which the recompute factor affects the overall runtime also
 depends on the cost to compute each individual time step. If the compute cost
 per time step is large compared to the compression and decompression cost, then
 compression is also likely to be beneficial, as shown in
-figure~\ref{fig:varying_compute}. As the time per time step increases and the
+Figure~\ref{fig:varying_compute}. As the time per time step increases and the
 compression cost becomes negligible, we observe that the ratio between the runtime
 of the combined method and that of pure checkpointing is only determined by the
 difference in recompute factors.
