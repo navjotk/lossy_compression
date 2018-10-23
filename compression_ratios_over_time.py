@@ -14,7 +14,7 @@ def run(tn=4000, space_order=4, kernel='OT4', nbpml=40, tolerance=0.01, parallel
         solver = overthrust_setup_tti(filename=filename, tn=tn, nbpml=nbpml, space_order=space_order, kernel=kernel, **kwargs)
     else:
         raise ValueError()
-    print(solver.dtype)
+
     total_timesteps = solver.source.time_range.num
     u = None
     rec = None
