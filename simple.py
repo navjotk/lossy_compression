@@ -37,12 +37,11 @@ def from_hdf5(filename, **kwargs):
     return Model(space_order=space_order, vp=data_vp, origin=origin, shape=shape,
                      dtype=dtype, spacing=spacing, nbpml=nbpml)
 
-def overthrust_setup(filename, kernel='OT2', space_order=2, nbpml=40, **kwargs):
+def overthrust_setup(filename, kernel='OT2', tn = 4000, space_order=2, nbpml=40, **kwargs):
     model = from_hdf5(filename, space_order=space_order, nbpml=nbpml, datakey='m0', dtype=np.float32)
     shape = model.vp.shape
     spacing = model.spacing
     nrec = shape[0]
-    tn = 4000
 
     # Derive timestepping from model spacing
     dt = model.critical_dt * (1.73 if kernel == 'OT4' else 1.0)
@@ -66,12 +65,11 @@ def overthrust_setup(filename, kernel='OT2', space_order=2, nbpml=40, **kwargs):
     return solver
 
 
-def overthrust_setup_tti(filename, kernel='OT2', space_order=2, nbpml=40, **kwargs):
+def overthrust_setup_tti(filename, tn = 4000, space_order=2, nbpml=40, **kwargs):
     model = from_hdf5(filename, space_order=space_order, nbpml=nbpml, datakey='m0', dtype=np.float32)
     shape = model.vp.shape
     spacing = model.shape
     nrec = shape[0]
-    tn = 4000
 
     # Derive timestepping from model spacing
     dt = model.critical_dt
