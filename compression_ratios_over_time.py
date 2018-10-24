@@ -27,6 +27,7 @@ def run(tn=4000, space_order=4, kernel='OT4', nbpml=40, tolerance=0.01, parallel
         last_time_step = rec.shape[0] - 1
         u = return_values[1]
         uncompressed = u.data[t+1]
+        print(np.linalg.norm(uncompressed))
         with Timer(factor=1000) as time1:
             compressed = compress(uncompressed, tolerance=tolerance, parallel=parallel_compression)
         result = (t, len(uncompressed.tostring())/float(len(compressed)), time1.elapsed)
