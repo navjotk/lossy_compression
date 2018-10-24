@@ -19,14 +19,14 @@ def read_csv_file(filename):
     return data, headings
         
 
-def plot(x, y, filename, title, xlabel, ylabel, highlight=None):
+def plot(x, y, filename, title, xlabel, ylabel, xscale='log', yscale='log', highlight=None):
     plt.plot(x, y, marker='.')
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.title(title)
     plt.xticks(rotation=90)
-    plt.xscale('log')
-    plt.yscale('log')
+    plt.xscale(xscale)
+    plt.yscale(yscale)
     plt.axhline(1, linestyle='dashed', color='red')
     if highlight is not None:
         for i in highlight:

@@ -2,6 +2,7 @@ from argparse import ArgumentParser
 from contexttimer import Timer
 
 import numpy as np
+import csv
 
 from simple import overthrust_setup, overthrust_setup_tti
 from zfp import compress, decompress
@@ -19,7 +20,8 @@ def run(tn=4000, space_order=4, kernel='OT4', nbpml=40, tolerance=0.01, parallel
     u = None
     rec = None
     results = []
-    for t in range(total_timesteps):
+    print(total_timesteps)
+    for t in range(1, total_timesteps-1):
         return_values = solver.forward(u=u, rec=rec, time_m=t, time_M=t, save=False)
         rec = return_values[0]
         last_time_step = rec.shape[0] - 1
@@ -30,10 +32,16 @@ def run(tn=4000, space_order=4, kernel='OT4', nbpml=40, tolerance=0.01, parallel
         result = (t, len(uncompressed.tostring())/float(len(compressed)), time1.elapsed)
         results.append(result)
         print(result)
-    with open('results.csv') as csvfile:
+
+    ret = solver.forward(save=False)
+    assert(ret[1].shape == u.shape)
+    assert(np.all(np.isclose(ret[1].data, u.data)))
+    
+    with open('results.csv', 'w+') as csvfile:
         writer = csv.writer(csvfile)
         for row in results:
             writer.writerow(row)
+
     
 
 
