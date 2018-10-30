@@ -37,8 +37,8 @@ def from_hdf5(filename, **kwargs):
     return Model(space_order=space_order, vp=data_vp, origin=origin, shape=shape,
                      dtype=dtype, spacing=spacing, nbpml=nbpml)
 
-def overthrust_setup(filename, kernel='OT2', tn = 4000, space_order=2, nbpml=40, **kwargs):
-    model = from_hdf5(filename, space_order=space_order, nbpml=nbpml, datakey='m0', dtype=np.float32)
+def overthrust_setup(filename, kernel='OT2', tn = 4000, space_order=2, nbpml=40, dtype=np.float32, **kwargs):
+    model = from_hdf5(filename, space_order=space_order, nbpml=nbpml, datakey='m0', dtype=dtype)
     shape = model.vp.shape
     spacing = model.spacing
     nrec = shape[0]
