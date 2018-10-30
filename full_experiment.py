@@ -36,11 +36,15 @@ def verify(space_order=4, kernel='OT4', nbpml=40, filename='', **kwargs):
     wrp.apply_forward()
     summary = wrp.apply_reverse()
 
-    rec2, u2, _ = solver.forward(save=True)
-    grad2, _ = solver.gradient(rec=rec2, u=u2)
+    with Timer(factor=1000) as tf:
+        rec2, u2, _ = solver.forward(save=True)
+
+    with Timer(factor=1000) as tr:
+        grad2, _ = solver.gradient(rec=rec2, u=u2)
 
     assert(np.allclose(grad.data, grad2.data))
     print("Checkpointing implementation is numerically verified")
+    print("Verification took %d ms for forward and %d ms for reverse" % (tf.elapsed, tr.elapsed))
     
 
 def run(space_order=4, kernel='OT4', nbpml=40, filename='', **kwargs):
