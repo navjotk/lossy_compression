@@ -28,13 +28,6 @@ class Timer(object):
         self.elapsed_secs = end - self.start
         self.elapsed = self.elapsed_secs * 1000  # millisecs
         self.tracker.append(self.elapsed)
-
-def measure(callable, numtries=5):
-    timings = []
-    for i in range(numtries):
-        with Timer(timings):
-            callable()
-    return timings
         
 
 def verify(space_order=4, kernel='OT4', nbpml=40, filename='', **kwargs):
@@ -58,7 +51,7 @@ def verify(space_order=4, kernel='OT4', nbpml=40, filename='', **kwargs):
     wrp = Revolver(cp, wrap_fw, wrap_rev, n_checkpoints, rec.data.shape[0]-2)
     wrp.apply_forward()
     summary = wrp.apply_reverse()
-
+    print(wrp.profiler.timings)
     
     with Timer([]) as tf:
         rec2, u2, _ = solver.forward(save=True)
@@ -99,8 +92,8 @@ def run(space_order=4, kernel='OT4', nbpml=40, filename='', **kwargs):
             wrp.apply_forward()
         with Timer(rev_timings):
             wrp.apply_reverse()
+        print(wrp.profiler.summary())
 
-    print("Forward: %d ms, Reverse: %d ms" % (min(fw_timings), min(rev_timings)))
 
 
 if __name__ == "__main__":
