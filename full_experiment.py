@@ -8,11 +8,34 @@ from examples.checkpointing.checkpoint import DevitoCheckpoint, CheckpointOperat
 
 from examples.seismic import Receiver
 from pyrevolve import Revolver
-
+from timeit import default_timer
 from simple import overthrust_setup
 
 from examples.seismic.acoustic.acoustic_example import acoustic_setup
-from contexttimer import Timer
+
+
+class Timer(object):
+    def __init__(self, tracker):
+        self.timer = default_timer
+        self.tracker = tracker
+        
+    def __enter__(self):
+        self.start = self.timer()
+        return self
+        
+    def __exit__(self, *args):
+        end = self.timer()
+        self.elapsed_secs = end - self.start
+        self.elapsed = self.elapsed_secs * 1000  # millisecs
+        self.tracker.append(self.elapsed)
+
+def measure(callable, numtries=5):
+    timings = []
+    for i in range(numtries):
+        with Timer(timings):
+            callable()
+    return timings
+        
 
 def verify(space_order=4, kernel='OT4', nbpml=40, filename='', **kwargs):
     solver = acoustic_setup(shape=(10, 10), spacing=(10, 10), nbpml=10, tn=50,
@@ -36,10 +59,11 @@ def verify(space_order=4, kernel='OT4', nbpml=40, filename='', **kwargs):
     wrp.apply_forward()
     summary = wrp.apply_reverse()
 
-    with Timer(factor=1000) as tf:
+    
+    with Timer([]) as tf:
         rec2, u2, _ = solver.forward(save=True)
 
-    with Timer(factor=1000) as tr:
+    with Timer([]) as tr:
         grad2, _ = solver.gradient(rec=rec2, u=u2)
 
     assert(np.allclose(grad.data, grad2.data))
@@ -65,12 +89,18 @@ def run(space_order=4, kernel='OT4', nbpml=40, filename='', **kwargs):
     wrap_fw = CheckpointOperator(solver.op_fwd(save=False), src=solver.source, u=u, m=m, rec=rec, dt=dt)
     wrap_rev = CheckpointOperator(solver.op_grad(save=False), u=u, v=v, m=m, rec=rec, dt=dt, grad=grad)
 
-    wrp = Revolver(cp, wrap_fw, wrap_rev, n_checkpoints, rec.data.shape[0]-2)
-    with Timer(factor=1000) as tf:
-        wrp.apply_forward()
-    with Timer(factor=1000) as tr:
-        wrp.apply_reverse()
-    print("Forward: %d ms, Reverse: %d ms" % (tf.elapsed, tr.elapsed))
+   
+    
+    fw_timings = []
+    rev_timings = []
+    for i in range(5):
+        wrp = Revolver(cp, wrap_fw, wrap_rev, n_checkpoints, rec.data.shape[0]-2)
+        with Timer(fw_timings):
+            wrp.apply_forward()
+        with Timer(rev_timings):
+            wrp.apply_reverse()
+
+    print("Forward: %d ms, Reverse: %d ms" % (min(fw_timings), min(rev_timings)))
 
 
 if __name__ == "__main__":
