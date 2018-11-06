@@ -1,6 +1,8 @@
 from argparse import ArgumentParser
 
 import numpy as np
+import os.path
+import csv
 
 from devito import TimeFunction, Function
 
@@ -75,6 +77,7 @@ def run(space_order=4, ncp=None, kernel='OT4', nbpml=40, filename='', **kwargs):
                               coordinates=solver.receiver.coordinates.data)
     cp = DevitoCheckpoint([u])
     n_checkpoints = ncp
+
     m = solver.model.m
     dt = solver.dt
     v = TimeFunction(name='v', grid=solver.model.grid, time_order=2, space_order=solver.space_order)
@@ -86,13 +89,26 @@ def run(space_order=4, ncp=None, kernel='OT4', nbpml=40, filename='', **kwargs):
     
     fw_timings = []
     rev_timings = []
-    for i in range(5):
-        wrp = Revolver(cp, wrap_fw, wrap_rev, n_checkpoints, rec.data.shape[0]-2)
-        with Timer(fw_timings):
-            wrp.apply_forward()
-        with Timer(rev_timings):
-            wrp.apply_reverse()
-        print(wrp.profiler.summary())
+    wrp = Revolver(cp, wrap_fw, wrap_rev, n_checkpoints, rec.data.shape[0]-2)
+    with Timer(fw_timings):
+        wrp.apply_forward()
+    with Timer(rev_timings):
+        wrp.apply_reverse()
+    print(wrp.profiler.summary())
+    results_file = 'results.csv'
+    if not os.path.isfile(results_file):
+        write_header = True
+    else:
+        write_header = False
+        
+    csv_row = wrp.profiler.get_dict()
+    csv_row['ncp'] = n_checkpoints
+    fieldnames = ['ncp'] + list(csv_row.keys())
+    with open('results.csv','a') as fd:
+        writer = csv.DictWriter(fd, fieldnames=fieldnames)
+        if write_header:
+            writer.writeheader()
+        writer.writerow(csv_row)
 
 
 
