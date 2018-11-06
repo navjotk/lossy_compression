@@ -3,6 +3,8 @@ from argparse import ArgumentParser
 import numpy as np
 import os.path
 import csv
+import socket
+
 
 from devito import TimeFunction, Function
 
@@ -67,9 +69,9 @@ def verify(space_order=4, kernel='OT4', nbpml=40, filename='', **kwargs):
     
 
 def run(space_order=4, ncp=None, kernel='OT4', nbpml=40, filename='', **kwargs):
-    #solver = acoustic_setup(shape=(10, 10), spacing=(10, 10), nbpml=10, tn=50,
-    #                        space_order=space_order, kernel=kernel, **kwargs)
-    solver = overthrust_setup(filename=filename, tn=1000, nbpml=nbpml, space_order=space_order, kernel=kernel, **kwargs)
+    solver = acoustic_setup(shape=(10, 10), spacing=(10, 10), nbpml=10, tn=50,
+                            space_order=space_order, kernel=kernel, **kwargs)
+    #solver = overthrust_setup(filename=filename, tn=1000, nbpml=nbpml, space_order=space_order, kernel=kernel, **kwargs)
     
     u = TimeFunction(name='u', grid=solver.model.grid, time_order=2, space_order=solver.space_order)
     rec = Receiver(name='rec', grid=solver.model.grid,
@@ -95,6 +97,7 @@ def run(space_order=4, ncp=None, kernel='OT4', nbpml=40, filename='', **kwargs):
     with Timer(rev_timings):
         wrp.apply_reverse()
     print(wrp.profiler.summary())
+    hostname = socket.gethostname()
     results_file = 'results.csv'
     if not os.path.isfile(results_file):
         write_header = True
@@ -102,8 +105,10 @@ def run(space_order=4, ncp=None, kernel='OT4', nbpml=40, filename='', **kwargs):
         write_header = False
         
     csv_row = wrp.profiler.get_dict()
+    
+    fieldnames = ['ncp', 'hostname'] + list(csv_row.keys())
     csv_row['ncp'] = n_checkpoints
-    fieldnames = ['ncp'] + list(csv_row.keys())
+    csv_row['hostname'] = hostname
     with open('results.csv','a') as fd:
         writer = csv.DictWriter(fd, fieldnames=fieldnames)
         if write_header:
