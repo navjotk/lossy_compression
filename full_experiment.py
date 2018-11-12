@@ -109,7 +109,7 @@ def run(space_order=4, ncp=None, kernel='OT4', nbpml=40, filename='', **kwargs):
     fieldnames = ['ncp', 'hostname'] + list(csv_row.keys())
     csv_row['ncp'] = n_checkpoints
     csv_row['hostname'] = hostname
-    with open('results.csv','a') as fd:
+    with open(results_file,'a') as fd:
         writer = csv.DictWriter(fd, fieldnames=fieldnames)
         if write_header:
             writer.writeheader()
