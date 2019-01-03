@@ -69,9 +69,9 @@ def verify(space_order=4, kernel='OT4', nbpml=40, filename='', **kwargs):
     
 
 def run(space_order=4, ncp=None, kernel='OT4', nbpml=40, filename='', **kwargs):
-    solver = acoustic_setup(shape=(10, 10), spacing=(10, 10), nbpml=10, tn=50,
-                            space_order=space_order, kernel=kernel, **kwargs)
-    #solver = overthrust_setup(filename=filename, tn=1000, nbpml=nbpml, space_order=space_order, kernel=kernel, **kwargs)
+    #solver = acoustic_setup(shape=(10, 10), spacing=(10, 10), nbpml=10, tn=50,
+    #                        space_order=space_order, kernel=kernel, **kwargs)
+    solver = overthrust_setup(filename=filename, tn=1000, nbpml=nbpml, space_order=space_order, kernel=kernel, **kwargs)
     
     u = TimeFunction(name='u', grid=solver.model.grid, time_order=2, space_order=solver.space_order)
     rec = Receiver(name='rec', grid=solver.model.grid,
@@ -98,7 +98,7 @@ def run(space_order=4, ncp=None, kernel='OT4', nbpml=40, filename='', **kwargs):
         wrp.apply_reverse()
     print(wrp.profiler.summary())
     hostname = socket.gethostname()
-    results_file = 'results.csv'
+    results_file = 'timing_results.csv'
     if not os.path.isfile(results_file):
         write_header = True
     else:
