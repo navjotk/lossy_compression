@@ -191,13 +191,14 @@ def plot(x, y, filename, title, xlabel, ylabel, hline=None, more_y=None, more_y_
 
 # Problem params
 nt = 2526
-cp_size = 287*881*881*4/1000000
+cp_size = 2*287*881*881*4/1000000
 
 #System params
 compute_ts = 1.11
 #bandwidth = 6777 # Richter
-bandwidth = 8139.2 # Skylake
-platform = "Skylake" # Richter
+#bandwidth = 8139.2 # Skylake
+bandwidth = 200
+platform = "Hypothetical" # Richter
 
 # Compressions Params
 c_factor = 41
@@ -238,6 +239,15 @@ def varying_peak_memory(nt, size_ts, compute_ts, bw, c_factor, c_time, d_time,
     plot(mems, speedups, "varying-memory.pdf", "Speedup for varying peak memory", "Memory (MB)",
              "Speedup (x)", hline=1, vlines=[overall_peak_mem, overall_peak_mem/c_factor], more_y=more_computes, fixed=fixed, xscale='log', textloc=[0.5, 0.40], more_y_labels=legend_labels,
              legend_placement=(0.41, 0.69))
+
+def revolve_only(nt, size_ts, compute_ts, bw):
+    p = Problem(nt, size_ts, compute_ts, bw)
+    min_time, overall_peak_mem = p.naive_strategy()
+    mems = logspace(4*size_ts, 2*overall_peak_mem, 40)
+    times = [sum(p.revolve(x)) for x in mems]
+    fixed = {'Timesteps': nt, 'Size of checkpoint (MB)': size_ts,
+             'Time for compute step (s)': compute_ts, 'Bandwidth (MB/s)': bw}
+    plot(mems, times, "revolve-only.pdf", "Time taken for Revolve under non-negligible storage", "Memory(MB)", "Time to solution (s)", xscale='log', fixed=fixed)
 
 
 def varying_peak_memory_total(nt, size_ts, compute_ts, bw, c_factor, c_time, d_time,
@@ -356,29 +366,29 @@ def vary_all(size_ts, bw, f, c, d):
 #vary_all(cp_size, bandwidth, c_factor, c_time, d_time)
     
 if __name__ == "__main__":
-    varying_peak_memory(nt, cp_size, compute_ts, #time to compute one timestep (s)
-                    bandwidth, # Memory bandwidth from stream (MB/s)
-                    c_factor, # Compression factor
-                    c_time, # Compression time(s)
-                    d_time, # Decompression time(s)
-                    t_d_time, # Theoretical decompression time (s)
-                    )
+#    varying_peak_memory(nt, cp_size, compute_ts, #time to compute one timestep (s)
+#                    bandwidth, # Memory bandwidth from stream (MB/s)
+#                    c_factor, # Compression factor
+#                    c_time, # Compression time(s)
+#                    d_time, # Decompression time(s)
+#                    t_d_time, # Theoretical decompression time (s)
+#                    )
 
-    varying_peak_memory_total(nt, cp_size, compute_ts, #time to compute one timestep (s)
-                    bandwidth, # Memory bandwidth from stream (MB/s)
-                    c_factor, # Compression factor
-                    c_time, # Compression time(s)
-                    d_time, # Decompression time(s)
-                    t_d_time, # Theoretical decompression time (s)
-                    )
+#    varying_peak_memory_total(nt, cp_size, compute_ts, #time to compute one timestep (s)
+#                    bandwidth, # Memory bandwidth from stream (MB/s)
+#                    c_factor, # Compression factor
+#                    c_time, # Compression time(s)
+#                    d_time, # Decompression time(s)
+#                    t_d_time, # Theoretical decompression time (s)
+#                    )
 
-    varying_compute(nt, cp_size, peak_mem, # Peak memory
-                                   bandwidth, # Memory bandwidth from stream (MB/s)
-                    c_factor, # Compression factor
-                    c_time, # Compression time(s)
-                    d_time, # Decompression time(s)
-                    more_peak_mem=more_peak_mem
-                    )
+#    varying_compute(nt, cp_size, peak_mem, # Peak memory
+#                                   bandwidth, # Memory bandwidth from stream (MB/s)
+#                    c_factor, # Compression factor
+#                    c_time, # Compression time(s)
+#                    d_time, # Decompression time(s)
+#                    more_peak_mem=more_peak_mem
+#                    )
 
     #varying_compression(nt, cp_size, compute_ts, #time to compute one timestep (s)
 #                    peak_mem, # Peak memory
@@ -387,11 +397,12 @@ if __name__ == "__main__":
 #                    compression_label
 #                    )
 
-    varying_nt(cp_size, compute_ts, #time to compute one timestep (s)
-                    peak_mem, # Peak memory
-                    bandwidth, # Memory bandwidth from stream (MB/s)
-                    c_factor, c_time, d_time
-                    )
+#    varying_nt(cp_size, compute_ts, #time to compute one timestep (s)
+#                    peak_mem, # Peak memory
+#                    bandwidth, # Memory bandwidth from stream (MB/s)
+#                    c_factor, c_time, d_time
+#                    )
+    revolve_only(nt, cp_size, compute_ts, bandwidth)
 
 
 
