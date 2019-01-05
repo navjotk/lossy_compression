@@ -4,7 +4,7 @@ stream.txt: stream.o
 	./stream.o > stream.txt
 
 stream.o: stream.c
-	gcc -o stream.o stream.c
+	gcc -fopenmp -O3 -o stream.o stream.c
 
 runtime.txt: uncompressed.h5
 

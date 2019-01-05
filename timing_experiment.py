@@ -91,6 +91,7 @@ def run(space_order=4, ncp=None, kernel='OT4', nbpml=40, filename='', **kwargs):
     
     fw_timings = []
     rev_timings = []
+    print("Running %d timesteps" % (rec.data.shape[0]-2))
     wrp = Revolver(cp, wrap_fw, wrap_rev, n_checkpoints, rec.data.shape[0]-2)
     with Timer(fw_timings):
         wrp.apply_forward()
@@ -98,7 +99,7 @@ def run(space_order=4, ncp=None, kernel='OT4', nbpml=40, filename='', **kwargs):
         wrp.apply_reverse()
     print(wrp.profiler.summary())
     hostname = socket.gethostname()
-    results_file = 'timing_results.csv'
+    results_file = 'timing_results_1.csv'
     if not os.path.isfile(results_file):
         write_header = True
     else:
@@ -140,7 +141,7 @@ if __name__ == "__main__":
     verify(nbpml=args.nbpml, 
         space_order=args.space_order, kernel=args.kernel,
         dse=args.dse, dle=args.dle, filename='overthrust_3D_initial_model.h5')
-    
+    path_prefix = os.path.dirname(os.path.realpath(__file__))
     run(nbpml=args.nbpml, ncp=args.ncp,
         space_order=args.space_order, kernel=args.kernel,
-        dse=args.dse, dle=args.dle, filename='overthrust_3D_initial_model.h5')
+        dse=args.dse, dle=args.dle, filename='%s/overthrust_3D_initial_model.h5'%path_prefix)
