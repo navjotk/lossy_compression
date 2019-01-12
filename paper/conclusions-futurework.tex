@@ -1,0 +1,43 @@
+\section{Conclusions and Future work}
+We use lossy compression to reduce the computational overhead of
+checkpointing in an adjoint computation used in seismic
+inversion, a common method in seismic imaging applications whose
+memory footprint commonly exceeds the available memory size in high
+performance computing systems. We also developed a performance model
+that computes whether or not the combination of compression and
+checkpointing will outperform pure checkpointing or pure compression
+in a variety of scenarios, depending on the available memory size,
+computational intensity of the application, and compression ratio and
+throughput of the compression algorithm. Our current result has
+several limitations that we plan to address in future work:
+\begin{itemize}
+\item We do not discuss the accuracy of the results after decompression. This
+depends on the application, compression algorithm, and affects the achievable
+compression ratios. Our performance model only requires knowledge of the
+compression time and ratio, and it is up to the user of this model to determine
+what accuracy is needed and thus what compression ratio is realistic for their
+application. TODO this is partiall addressed now. Talk about
+convergence guarantees instead. 
+\item ZFP only supports serial decompression. If ZFP supported
+parallel decompression, our experiments would likely show a geater region in
+which the combined method is faster than pure checkpointing. Furthermore, ZFP
+only supports fields with up to three dimensions, while
+exploiting similarities between fields at different time steps may yield a
+better compression ratio. TODO update to make more relevant.
+\item Our performance model is based on uniform compression ratios and
+times.  However, many applications, including seismic inversion, are likely to have
+initial conditions that contain little information and are easily
+compressed, and the compression ratio gradually declines as the field
+becomes more complex. We based our experiments on the final wave
+field, which is presumably difficult to compress.
+\item In comparing pure compression with pure checkpointing, we assume
+that every checkpoint is compressed and decompressed. However, if the
+available memory is only slightly less than the required memory, an
+implementation that compresses only a subset of the checkpoints might
+outperform the expectations of our model.
+\item We do not discuss multi-level checkpointing, where some
+checkpoints are stored on a slower, larger device. We expect
+compression to be beneficial in these scenarios due to reduced data
+transfer sizes.
+\item TODO scheduling
+\end{itemize}

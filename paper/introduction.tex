@@ -1,0 +1,176 @@
+\section{Introduction}
+
+\subsection{Adjoint-based optimization}
+Adjoint-based optimization problems typically consist of a simulation
+that is run forward in simulation time, producing data that is used in
+reverse order by a subsequent adjoint computation that is run
+backwards in simulation time.  Figure~\ref{fig:dataflow} shows the
+resulting data flow. Besides seismic inversion, many important
+numerical problems in science and engineering use adjoints and follow
+the same pattern. 
+
+Since the data for each of the computed timesteps in the forward
+simulation will be used later in the adjoint computation, it would be
+prudent to store it in memory until it is required again, if the required amount
+of memory is indeed available. However, the total size of this data
+can often run into tens of terabytes and the management of this data
+becomes a problem in itself. This data management problem is the
+subject of this paper. 
+
+\begin{figure}
+\begin{center}
+\input{dataflow}
+\end{center}
+\caption{The dataflow pattern that is typical of adjoint-based optimization problems}
+\label{fig:dataflow}
+\end{figure}
+
+\subsection{Example adjoint problem: Seismic inversion}
+Seismic inversion typically involves the simulation of the propagation
+of seismic waves through the earth's subsurface, followed by a
+comparison with data from field measurements. The model of the
+subsurface is iteratively improved by minimizing the misfit between
+simulated data and field measurement in an adjoint optimization
+problem.  Figure~\ref{fig:offshore_survey} shows the setup of the
+field experiment that produces the measured
+data~\cite{plessix2006review}. 
+
+
+The data collected in an offshore survey typically consists of a
+number of ``shots'' - each of these shots corresponding to different
+locations of sources and receivers. As a loose analogy with machine
+learning, these correspond to different data points. Since the
+gradient computation over a single shot is complex enough that a
+single shot can occupy a complete node for $~10^1-10^2$ minutes, the gradient is computed for each of these
+shots independently and then collated across all the shots to form a
+single update that is used to update the model. It might be evident
+here that the processing across shots is easy to parallelise since it
+requires a small amount of communication followed by a relatively long
+period of independent computation as part of a single iteration of the
+optimisation. Since the number of shots is typically of the order of
+$10^4$, this offers ample opportunity to fill up a large cluster with
+computation, even if an individual shot is only processed on a single
+node of the cluster at a time. Hence, it might be worthy to note that
+even though this paper focusses on a single gradient evaluation for a
+single shot, the overall problem involves carrying out $~10^5$ such
+evaluations and is typically run on large clusters for non-trivial
+amounts of time.
+
+The first part of seismic inversion, i.e. the simulation of seismic
+wave propagation through the earth's subsurface is typically done
+using a finite-difference solver and is called the ``forward problem''
+in the context of inversion. Looking at this part in isolation, the
+data flow here looks like the one shown in
+figure~\ref{fig:dataflowfw}. This illustration assumes a first-order
+time-stepper, i.e. the computation of each timestep only depends on
+the previous timestep. In such a scenario, only two timesteps need to
+be kept in memory - the last computed step and the one currently being
+computed. In case of an n-th order time-stepper, $(n+1)$ timesteps
+need to be kept in memory at any one time. Hence, the memory
+requirements of the forward problem can remain constant, regardless of
+the number of timesteps the simulation may be run for.
+
+\begin{figure*}
+\begin{center}
+\input{dataflowfw}
+\end{center}
+\caption{The dataflow pattern typical of a forward-only
+  simulation. Boxes represent data and arrows represent computation.}
+\label{fig:dataflowfw}
+\end{figure*}
+
+
+TODO remove contractions
+
+\subsection{Memory requirements}
+A number of strategies are regularly employed to deal with this
+enormous volume of data - the simplest of these being to store it to a
+disk, to be read later by the adjoint pass in reverse order. However,
+typically the computation to be done on this data in the adjoint phase
+takes much less time than the time taken to read it from the disk,
+reading from the disk becomes the bottleneck for most practical cases,
+rendering this method, although possibly the simplest, also the
+slowest of the possible alternatives. Seeing this from the perspective
+where thousands of such computations might be running in parallel on a
+single cluster (for different shots), the network bandwidth might
+restrict the use of a network storage further, hence only node-local disks
+may be suitable for this strategy. 
+
+Domain decomposition, where a single shot may be distributed across more
+than one node, is often used not only to distribute the computational
+workload across more processors, but also to utilize the large amount of memory
+available in distributed systems. While this strategy is very powerful, the
+number of compute nodes and therefore the amount of memory that can be used
+efficiently is limited, for example by communication overheads that start to
+dominate as the domain is split into increasingly small
+pieces~\cite{virieux2009seismic}. Secondly, this strategy can lead to
+a wastage of resources and sometimes a longer time-to-solution for a
+given inversion problem using a given number of nodes, especially when
+the number of nodes is less than the number of shots. For example, a
+problem setup that requires only 10\% more memory than is available on
+a single node might not be a good candidate for domain decomposition
+over multiple nodes. Lastly, this method is even less applicable on
+cloud-based setups since it can be drastically more complicated
+to setup and slower due to the communication.
+
+
+Another common strategy in seismic inversion is to only store values
+at the boundaries of the domain at each timestep, and reconstruct the
+rest of the wavefield when
+required~\cite{clapp2009reverse,yang2014rtm} with time reversal of the
+wave equation. However, this method is not applicable for wave
+equations that are not time reversible when for example physical
+attenuation is included.
+
+Checkpointing is yet another strategy to reduce the memory
+overhead. Only a subset of the timesteps during the forward pass is
+stored (and the rest discarded). The discarded data is recomputed when
+needed by restarting the forward pass from the last available stored
+state. We discuss this strategy in section~\ref{revolve}.
+
+Another strategy commonly employed to reduce the memory footprint of
+such applications is data compression. This is discussed in
+section~\ref{compression}. 
+
+In this paper, we extend the previous studies by \emph{combining} checkpointing
+and compression. This is obviously useful when the data does not fit in the
+available memory even after compression, for example for very large adjoint
+problems, or for problems where the required accuracy limits the achievable
+compression ratios.
+
+Compared to the use of only checkpointing without compression, this
+combined method often improves performance. This is a consequence of
+the reduced size of stored timesteps, allowing more timesteps to be
+stored during the forward computation. This in turn reduces the amount
+of recomputation that needs to be performed. On the other hand, the
+compression and decompression itself takes time. The answer to the
+question ``does compression pay off?'', depends on a number of factors including - available
+memory, the required precision, the time taken to compress and
+decompress, and the achieved compression factors, and various problem specific
+parameters like computational intensity of the kernel involved in the
+forward and adjoint computations, and the number of timesteps.
+
+Hence, the answer to the compression question depends not only on the
+problem one is solving (within seismic inversion, there are numerous
+variations of the wave equation that may be solved), but also the
+hardware specifics of the machine on which it is being solved. In
+fact, as we will see in section TODO, the answer might even change
+during the solution process of an individual problem. This brings up
+the need to be able to predict whether compression would pay off in a
+given scenario, without incurring significant overheads in answering
+this question. In this paper, we present the use of a performance
+model to answer that question.
+
+\subsection{Summary of contributions}
+\begin{itemize}
+\item Study the use of different compression algorithms to seismic
+  data including 6 lossless and the two most popular lossy compression
+  algorithms for floating point data. 
+\item Study the compressibility behaviour of seismic data in terms of
+  compression factors and compression and decompression times under
+  these algorithms
+\item Study the performance model for Revolve alone, that takes into
+  account time taken to read and write checkpoints
+\item An online performance model to predict whether compression would speed up
+  an optimization problem
+\end{itemize}

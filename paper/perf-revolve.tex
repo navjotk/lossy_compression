@@ -1,0 +1,72 @@
+\section{Revolve: Performance model}
+\label{sec:revolve}
+Checkpointing is a commonly used strategy to reduce the memory footprint
+of adjoint problems. Here, depending on the memory available, some timesteps
+computed in the forward pass are stored, while others are discarded. The ones
+that were discarded are later recomputed by rerunning the forward pass from
+the last stored checkpoint. 
+The Revolve algorithm~\cite{griewank2000algorithm} provides an
+answer to the question of which timesteps should be stored and which
+states should be recomputed to minimize the total amount of
+recomputation work. Other authors have subsequently developed
+extensions to Revolve that are optimal under different
+assumptions~\cite{stumm2009multistage,
+wang2009minimal,aupy2016optimal,schanen2016asynchronous, aupy2017periodicity}. Previous
+work has applied checkpointing to seismic imaging and inversion
+problems~\cite{symes2007reverse, datta2018asynchronous}.
+
+
+In this section, we build on the ideas introduced in \cite{stumm2009multistage} to build a performance model that can be used to predict the runtime of an adjoint computation that uses the Revolve checkpointing strategy. 
+We call the time taken by a single forward computational step $C_F$
+and correspondingly, the time taken by a single backward step $C_R$. For a simulation with $\mathbf{N}$ timesteps, the minimum wall time required
+for the full forward-adjoint evaluation is given by
+\begin{equation}
+T_N = \mathbf{C_F} \cdot \mathbf{N} + \mathbf{C_R} \cdot \mathbf{N}
+\end{equation}
+If the size of a single timestep in memory is given by $\mathbf{S}$, this
+requires a memory of at least size $\mathbf{S} \cdot \mathbf{N}$. If sufficient memory
+is available, no checkpointing or compression is needed.
+
+If the memory is smaller than $\mathbf{S} \cdot \mathbf{N}$, Revolve provides
+a strategy to solve for the adjoint field by storing a subset of the $\mathbf{N}$ total checkpoints
+and recompute the remaining ones. The overhead introduced by this method can be broken down into
+the recomputation overhead $\mathbf{O}_R$ and the storage overhead $\mathbf{O}_S$. The recomputation
+overhead is the amount of time spent in recomputation, given by
+\begin{equation}
+\mathbf{O}_R(N, M) = p(N, M) \cdot \mathbf{C_F},
+\end{equation}
+where $p(N, M)$ is the minimum number of recomputed steps from \cite{griewank2000algorithm}, reproduced
+here in equation \ref{eqn:recompute}.
+\begin{figure*}
+\begin{equation}
+p(N, M) = \begin{cases}
+      N(N-1) /2, & \text{if}\ M=1 \\
+      \min\limits_{1<=\widetilde{N}<=N} \{\widetilde{N} + p(\widetilde{N}, M) + p(N-\widetilde{N}, M-1)\}, & \text{if}\ M>1
+    \end{cases}
+    \label{eqn:recompute}
+\end{equation}
+\end{figure*}
+In equation \ref{eqn:recompute}, M is the number of checkpoints that can be
+stored in memory. Note that for $M >=N$, $\mathbf{O}_R$ would be zero. For $M <
+N$, $\mathbf{O}_R$ grows rapidly as M is reduced relative to N. 
+
+In an ideal implementation, the storage overhead $\mathbf{O}_S$ might be zero, since the computation could
+be done ``in-place'', but in practice, checkpoints are generally stored in a separate section of memory and they
+need to be transferred to a ``computational'' section of the memory where the computation is performed, and then
+the results copied back to the checkpointing memory. This copying is a common feature of checkpointing
+implementations, and might pose a non-trivial overhead when the
+computation involved in a single timestep is not very large. 
+This storage overhead is given by:
+\begin{equation}
+\mathbf{O}_{SR}(N, M) = \mathbf{W}(N, M) \cdot \frac{\mathbf{S}}{\mathbf{B}} +
+\mathbf{N} \cdot \frac{\mathbf{S}}{\mathbf{B}}
+\label{eqn:storage}
+\end{equation}
+where $\mathbf{W}$ is the total number of times Revolve writes
+checkpoints for a single run, $ \mathbf{N}$ is the number of times
+checkpoints are read, and $\mathbf{B}$ is the bandwidth at which these
+copies happen. The total time to solution becomes
+\begin{equation}
+T_R = \mathbf{C_F} \cdot \mathbf{N} + \mathbf{C_R} \cdot \mathbf{N} + \mathbf{O}_R(N, M) +
+\mathbf{O}_{SR}(N, M)
+\end{equation} 

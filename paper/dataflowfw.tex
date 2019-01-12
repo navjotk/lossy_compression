@@ -1,0 +1,13 @@
+\begin{tikzpicture}
+  [node distance=.5cm,
+  start chain=1 going right,start chain=2 going left]
+     \node[punktchain, join, on chain=1] (t1) {$F(0)$};
+     \node[punktchain, join, on chain=1] (t2)      {$F(1)$};
+     \node[punktchain, join, on chain=1] (t3)      {$F(2)$};
+     \node[punktchain, join, on chain=1] (t4) {$F(3)$};
+     \node[punktchain, join, on chain=1] (t5) {$F(4)$};
+     \node[punktchain, join, on chain=1] (t6) {$F(5)$};
+     \node[punktchain, join, draw=none, on chain=1] (ellipsis1) {$\cdots$};
+     \node[punktchain, join, on chain=1] (tn) {$F(n)$};
+
+  \end{tikzpicture}
