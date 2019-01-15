@@ -28,15 +28,23 @@ else:
     from pysz import compress, decompress
 
 f = h5py.File(filename, 'r')
-uncompressed = f['data'][()].astype(np.dtype('float32'))
+uncompressed = f['data'][()].astype(np.dtype('float64'))
 print("\"Size of compressed field\", \"Compression Factor\", \"Compression time\", \"Decompression time\", \"Tolerance\", \"Error norm\", \"Maximum error\"")
 for p_i in range(0, 16):
     tolerance = 0.1**p_i
     with Timer(factor=1000) as t:
-        compressed = compress(uncompressed, tolerance=tolerance, parallel=parallel)
+        if compressor=="zfp":
+            kwargs = {'parallel':parallel, 'tolerance': tolerance}
+        else:
+            kwargs = {'tolerance': tolerance}
+        compressed = compress(uncompressed, **kwargs)
     
     with Timer(factor=1000) as t2:
-        decompressed = decompress(compressed, uncompressed.shape, uncompressed.dtype, tolerance=tolerance, parallel=parallel)
+        if compressor=="zfp":
+            kwargs = {'parallel': parallel, 'tolerance': tolerance}
+        else:
+            kwargs = {}
+        decompressed = decompress(compressed, uncompressed.shape, uncompressed.dtype, **kwargs)
 
     #to_hdf5(decompressed, "decompressed-t-%d.h5"%p_i)
     error_matrix = decompressed-uncompressed
