@@ -1,0 +1,42 @@
+\section{Acceptable errors and convergence}
+\label{sec:errors}
+
+Our performance model is designed to be agnostic of the specific adjoint-based 
+optimization problem being solved. This is because we envision its use in a generic
+checkpointing runtime that manages the checkpointed execution of the optimization
+problem that accepts an acceptable error tolerance as an input parameter for each
+gradient evaluation and determines whether or not compression can pay off for that
+iteration, and if yes, which of the available strategies is to be used. This last question 
+has previously been addressed previously in literature but in more specific contexts 
+\cite{kunkel2017toward, tao2018optimizing}.
+
+One question that arises in evaluating derivatives on grids compressed (and decompressed)
+using lossy compression is the numerical stability of the computed derivatives, since errors
+in neighbouring points can accumulate in the derivative rather quickly, rendering the derivatives
+unusable. This question was addressed for ZFP \cite{zfp-derivatives} and SZ\cite{tao2017z}
+separately.
+
+In the context of seismic inversion, it has been shown before that the precision required
+in the gradient evaluation is very low in the beginning of the optimization and
+accurate gradients are not needed until the optimization is close to a minimum 
+\cite{van20143d, boehm2016wavefield}. This is perhaps quite intuitive since, being far
+from a minimum in the beginning, a gradient pointing in the approximate direction of the
+relevant minimum is sufficient to make progress. These initial iterations could use a more
+aggressive lossy compression strategy to accelerate (through compression) the progress 
+towards the minimum. Once the optimization is within the vicinity of the minimum, the
+gradient is required at a higher accuracy to make any progress, and this performance
+model can then dynamically decide to disable compression for those iterations where
+a more accurate, albeit slower, gradient evaluation is preferred. 
+
+There is also a body of work that addresses convergence guarantees of trust-region
+based optimization methods in the presence of unreliable gradients. This was primarily
+done for the scenario where the gradient (and sometimes the functional itself) is known
+with a probability $p$.~\cite{blanchet2016convergence,cartis2017global,chen2018stochastic}
+It was shown here that the convergence rate is only affected by a factor that is 
+a linear function of $p$. This analytical framework could be extended to provide bounds
+on the accuracy required in a particular gradient evaluation in order to guarantee a certain
+convergence rate.
+
+Both these analyses stop at the required accuracy in the gradient evaluation. This needs
+to be extended to derive acceptable error tolerances in individual grid points corresponding to a specific
+error bound in the overall gradient evaluation. 

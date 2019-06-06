@@ -1,0 +1,26 @@
+\section{Performance model including compression}
+
+By using compression, the size of each checkpoint is reduced and therefore the
+number of checkpoints available is increased ($M$ in equation
+\ref{eqn:recompute}). This reduces the recomputation overhead $\mathbf{O}_R$,
+while at the same time adding overheads related to compression and decompression
+in $\mathbf{O}_S$.
+To be beneficial, the reduction in $\mathbf{O}_R$ must offset the increase in 
+$\mathbf{O}_{SR}$, leading to an overall decrease in the time to solution $T$.
+
+Our performance model assumes
+ that the compression algorithm behaves uniformly
+across the different time steps of the simulation, i.e. that we get the same compression ratio, compression time and 
+decompression time, no matter which of the $N$ possible checkpoints we try to compress/decompress. The storage overhead
+now becomes
+\begin{equation}
+\begin{split}
+\mathbf{O}_{SR}(N, M) = &\mathbf{W}(N, M \cdot F) \cdot \left(\frac{\mathbf{S}}{\mathbf{F}
+  \cdot \mathbf{B}} + t_c\right) +\\&\mathbf{N} \cdot
+\left(\frac{\mathbf{S}}{\mathbf{F} \cdot \mathbf{B}} + t_d\right)
+\end{split}
+\end{equation}
+where $\mathbf{F}$ is the compression ratio (i.e. the ratio between the uncompressed and compressed checkpoint), and $t_c$
+and $t_d$ are compression and decompression times, respectively. At the same
+time, the recomputation overhead decreases
+because $\mathbf{F}$ times more checkpoints are now available.

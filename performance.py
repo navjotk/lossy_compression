@@ -42,7 +42,7 @@ def revolve_factors(nt, ncp):
     fwd = CounterOperator()
     rev = CounterOperator()
     cp = CounterCheckpoint()
-    revolver = Revolver(cp, fwd, rev, ncp, nt)
+    revolver = Revolver(cp, fwd, rev, ncp, nt) #, compression_params={'scheme': None})
     revolver.apply_forward()
 
     assert(fwd.counter == nt)
