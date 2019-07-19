@@ -5,6 +5,7 @@ from examples.seismic import PointSource, Receiver, TimeAxis, RickerSource
 from examples.seismic.acoustic import AcousticWaveSolver
 from examples.seismic.tti import AnisotropicWaveSolver
 from examples.seismic.model import Model
+from examples.seismic import demo_model, AcquisitionGeometry
 from devito import TimeFunction, Function
 import numpy as np
 #from pyrevolve import Revolver
@@ -48,19 +49,21 @@ def overthrust_setup(filename, kernel='OT2', tn = 4000, space_order=2, nbpml=40,
     t0 = 0.0
     time_range = TimeAxis(start=t0, stop=tn, step=dt)
 
-    # Define source geometry (center of domain, just below surface)
-    src = RickerSource(name='src', grid=model.grid, f0=0.005, time_range=time_range)
-    src.coordinates.data[0, :] = np.array(model.domain_size) * .5
+    src_coordinates = np.empty((1, len(spacing)))
+    src_coordinates[0, :] = np.array(model.domain_size) * .5
     if len(shape) > 1:
-        src.coordinates.data[0, -1] = model.origin[-1] + 2 * spacing[-1]
-    # Define receiver geometry (spread across x, just below surface)
-    rec = Receiver(name='rec', grid=model.grid, time_range=time_range, npoint=nrec)
-    rec.coordinates.data[:, 0] = np.linspace(0., model.domain_size[0], num=nrec)
-    if len(shape) > 1:
-        rec.coordinates.data[:, 1:] = src.coordinates.data[0, 1:]
+        src_coordinates[0, -1] = model.origin[-1] + 2 * spacing[-1]
 
-    # Create solver object to provide relevant operators
-    solver = AcousticWaveSolver(model, source=src, receiver=rec, kernel=kernel,
+    rec_coordinates = np.empty((nrec, len(spacing)))
+    rec_coordinates[:, 0] = np.linspace(0., model.domain_size[0], num=nrec)
+    if len(shape) > 1:
+        rec_coordinates[:, 1] = np.array(model.domain_size)[1] * .5
+        rec_coordinates[:, -1] = model.origin[-1] + 2 * spacing[-1]
+
+    # Create solver object to provide relevant operator
+    geometry = AcquisitionGeometry(model, rec_coordinates, src_coordinates,
+                                   t0=0.0, tn=tn, src_type='Ricker', f0=0.010)
+    solver = AcousticWaveSolver(model, geometry, kernel=kernel,
                                 space_order=space_order, **kwargs)
     return solver
 

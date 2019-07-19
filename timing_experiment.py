@@ -38,19 +38,19 @@ def verify(space_order=4, kernel='OT4', nbpml=40, filename='', compression_param
     solver = acoustic_setup(shape=(10, 10), spacing=(10, 10), nbpml=10, tn=50,
                             space_order=space_order, kernel=kernel, **kwargs)
     #solver = overthrust_setup(filename=filename, tn=50, nbpml=nbpml, space_order=space_order, kernel=kernel, **kwargs)
-    
+
     u = TimeFunction(name='u', grid=solver.model.grid, time_order=2, space_order=solver.space_order)
 
     rec = Receiver(name='rec', grid=solver.model.grid,
-                              time_range=solver.receiver.time_range,
-                              coordinates=solver.receiver.coordinates.data)
+                              time_range=solver.geometry.time_axis,
+                              coordinates=solver.geometry.rec_positions)
     cp = DevitoCheckpoint([u])
     n_checkpoints = None
     m = solver.model.m
     dt = solver.dt
     v = TimeFunction(name='v', grid=solver.model.grid, time_order=2, space_order=solver.space_order)
     grad = Function(name='grad', grid=solver.model.grid)
-    wrap_fw = CheckpointOperator(solver.op_fwd(save=False), src=solver.source, u=u, m=m, rec=rec, dt=dt)
+    wrap_fw = CheckpointOperator(solver.op_fwd(save=False), src=solver.geometry.src, u=u, m=m, rec=rec, dt=dt)
     wrap_rev = CheckpointOperator(solver.op_grad(save=False), u=u, v=v, m=m, rec=rec, dt=dt, grad=grad)
     nt = rec.data.shape[0] - 2
     print("Verifying for %d timesteps" % nt)
@@ -80,8 +80,8 @@ def checkpointed_run(space_order=4, ncp=None, kernel='OT4', nbpml=40, filename='
     
     u = TimeFunction(name='u', grid=solver.model.grid, time_order=2, space_order=solver.space_order)
     rec = Receiver(name='rec', grid=solver.model.grid,
-                              time_range=solver.receiver.time_range,
-                              coordinates=solver.receiver.coordinates.data)
+                              time_range=solver.geometry.time_axis,
+                              coordinates=solver.geometry.rec_positions)
     cp = DevitoCheckpoint([u])
     n_checkpoints = ncp
 
@@ -89,7 +89,7 @@ def checkpointed_run(space_order=4, ncp=None, kernel='OT4', nbpml=40, filename='
     dt = solver.dt
     v = TimeFunction(name='v', grid=solver.model.grid, time_order=2, space_order=solver.space_order)
     grad = Function(name='grad', grid=solver.model.grid)
-    wrap_fw = CheckpointOperator(solver.op_fwd(save=False), src=solver.source, u=u, m=m, rec=rec, dt=dt)
+    wrap_fw = CheckpointOperator(solver.op_fwd(save=False), src=solver.geometry.src, u=u, m=m, rec=rec, dt=dt)
     wrap_rev = CheckpointOperator(solver.op_grad(save=False), u=u, v=v, m=m, rec=rec, dt=dt, grad=grad)
     
     fw_timings = []
